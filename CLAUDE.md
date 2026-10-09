@@ -1,7 +1,7 @@
 # עיר ללא חוקים 3D — notes for Claude
 
 - The whole game is one self-contained HTML file. `index.html` here is the published copy.
-- Live site (GitHub Pages, branch `main`, root): https://arielshary100-sys.github.io/city-game/
+- Live site (GitHub Pages, branch `main`, root): https://arielshary100-sys.github.io/City-game/
 - The owner also has a Claude artifact of the same game; keep both in sync.
 
 ## Rule from the owner: every code change goes online

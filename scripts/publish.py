@@ -45,7 +45,7 @@ def main():
     git("rebase", "-q", "origin/main")
     git("push", "-q", "origin", "HEAD:main")
     print("Published:", git("log", "--oneline", "-1").strip())
-    print("Live in 1-2 min: https://arielshary100-sys.github.io/city-game/")
+    print("Live in 1-2 min: https://arielshary100-sys.github.io/City-game/")
 
 
 if __name__ == "__main__":
