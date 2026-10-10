@@ -59,6 +59,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ink);color:var(-
 #missionBox{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);background:var(--panel);padding:7px 16px;border-radius:12px;font-weight:800;font-size:15px;z-index:5;text-align:center;border:2px solid var(--sun);max-width:44vw;pointer-events:none}
 #missionBox small{display:block;color:var(--sun);font-size:12px;font-weight:700}
 @media (max-width:520px){#missionBox{top:calc(env(safe-area-inset-top,0px) + 196px);max-width:80vw}}
+#subt{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);max-width:min(92vw,640px);background:rgba(0,0,0,.72);color:#fff;padding:9px 16px;border-radius:12px;font-size:17px;font-weight:700;z-index:7;pointer-events:none;opacity:0;transition:opacity .3s;text-align:center;direction:rtl}#subt.show{opacity:1}#subt b{color:#ffd84a}
 #chatFeed{position:fixed;left:10px;bottom:150px;z-index:6;pointer-events:none;max-width:min(70vw,360px);display:flex;flex-direction:column;gap:4px}.chatln{background:rgba(0,0,0,.55);color:#fff;padding:5px 10px;border-radius:10px;font-size:14px;transition:opacity .5s;direction:rtl}.chatln b{color:#6dff9e}
 #toast{position:fixed;left:50%;top:32%;transform:translateX(-50%);background:var(--panel);padding:9px 18px;border-radius:12px;font-weight:800;font-size:16px;z-index:7;pointer-events:none;opacity:0;transition:opacity .25s;text-align:center;max-width:86vw}
 #toast.show{opacity:1}
@@ -927,10 +928,11 @@ function removeCar(c){scene.remove(c.g);c.mat.dispose();if(c.neonM)c.neonM.mater
 const skins=[0xf1c7a3,0xd9a47c,0xa86f4a,0x6e4630,0xf5d6c0];
 const shirts=[0xe04b4b,0x3b7dd8,0x46a35a,0xe0b43a,0x8e5cc8,0xe87f3a,0xeeeeee,0x333333,0x2bb3b3,0xd45a9a,0x9a7a5a];
 const hairs=[0x2a1a10,0x0f0f0f,0x6b4a2a,0xc9a55a,0x888888,0x9a3a1a];
-function mkPed(x,z,kind='civ'){const p={id:++uid,x,z,a:R()*Math.PI*2,kind,state:'walk',t:rr(1,5),hp:kind==='cop'?60:kind==='gang'?55:30,walk:0,cd:rr(.5,1.5),persist:false,flee:null,deadT:0,detour:0,detT:0,sayCD:0,pitch:rr(.6,1.5),vx:0,vz:0,moving:false,fightT:0,y:0};
+function mkPed(x,z,kind='civ'){const old=kind==='civ'&&R()<.12,kid=kind==='civ'&&!old&&R()<.07;const p={id:++uid,x,z,a:R()*Math.PI*2,kind,state:'walk',t:rr(1,5),hp:kind==='cop'?60:kind==='gang'?55:30,walk:0,cd:rr(.5,1.5),persist:false,flee:null,deadT:0,detour:0,detT:0,sayCD:0,pitch:rr(.6,1.5),vx:0,vz:0,moving:false,fightT:0,y:0};
   const fem=kind==='civ'&&R()<.45;if(fem)p.pitch=rr(1.2,1.6);else p.pitch=rr(.6,1.1);
-  p.h=buildHuman({fem,skin:pick(skins),hair:pick(hairs),eye:pick([0x2a1a0e,0x3a5a2a,0x2a4a7a,0x1a1a1a]),shirt:kind==='cop'?0x1d3f8f:kind==='gang'?0x2f9a3e:pick(shirts),pants:kind==='cop'?0x131d3d:pick([0x2a3550,0x3a3a3a,0x5a4630,0x1f1f1f,0x6a6a7a,0x3a4a6a]),shoe:pick([0x1a1a1a,0x5a3a22,0xeeeeee,0x8a2a2a]),hairStyle:fem?pick(['long','long','pony','afro','short']):pick(['short','short','buzz','bald','afro','quiff']),beard:!fem&&kind!=='cop'&&R()<.25,skirt:fem&&R()<.4?pick([0xc0392b,0x2c3e50,0x8e44ad,0xd35400,0x16a085]):null,sleeve:kind==='cop'?.45:(R()<.5?1:.45),hat:kind==='cop'?0x10204a:null,band:kind==='gang'?0x1d6b28:null,badge:kind==='cop'});
-  if(kind!=='civ')setGun(p.h,kind==='gang'?pick(['uzi','pistol','ak']):'pistol');return p;}
+  p.h=buildHuman({fem,skin:pick(skins),hair:old?pick([0xd8d8d8,0xb8b8b8,0xeeeeee]):pick(hairs),eye:pick([0x2a1a0e,0x3a5a2a,0x2a4a7a,0x1a1a1a]),shirt:kind==='cop'?0x1d3f8f:kind==='gang'?0x2f9a3e:pick(shirts),pants:kind==='cop'?0x131d3d:pick([0x2a3550,0x3a3a3a,0x5a4630,0x1f1f1f,0x6a6a7a,0x3a4a6a]),shoe:pick([0x1a1a1a,0x5a3a22,0xeeeeee,0x8a2a2a]),hairStyle:fem?pick(['long','long','pony','afro','short']):pick(['short','short','buzz','bald','afro','quiff']),beard:!fem&&kind!=='cop'&&R()<.25,skirt:fem&&R()<.4?pick([0xc0392b,0x2c3e50,0x8e44ad,0xd35400,0x16a085]):null,sleeve:kind==='cop'?.45:(R()<.5?1:.45),hat:kind==='cop'?0x10204a:null,band:kind==='gang'?0x1d6b28:null,badge:kind==='cop'});
+  if(kind!=='civ')setGun(p.h,kind==='gang'?pick(['uzi','pistol','ak']):'pistol');
+  p.old=old;p.kid=kid;p.spd=old?rr(.65,.95):kid?rr(1.5,2):rr(1.05,1.6);if(kid)p.pitch=rr(1.6,1.9);{const s0=kid?rr(.6,.72):rr(.93,1.07);p.h.g.scale.set(s0*(kid?1:rr(.94,1.1)),s0,s0*(kid?1:rr(.94,1.1)));}return p;}
 function removePed(p){disposeHuman(p.h);}
 const P={x:HOSPITAL.x,z:HOSPITAL.z,a:Math.PI/2,y:0,vy:0,hp:100,armor:0,car:null,money:300,weapons:[{id:'fist',ammo:Infinity}],wi:0,fireCD:0,walk:0,dead:false,deadT:0,swing:0,aimT:0,idleT:0,arrestT:0,moving:false,run:false};
 const me=()=>P.car||P.boat||P.plane||P;const onFoot=()=>!P.car&&!P.boat&&!P.plane;
@@ -1196,7 +1198,7 @@ function physCar(c,dt,thr,steer,hb){
   if(c===P.car&&!isBike(c)){if(c.ta==null||Math.abs(c.v)<2)c.ta=na;const gr=(c.grip||1)*(1-.4*rainK)*(hb?.22:1),sp=Math.abs(c.v);c.ta=lerpA(c.ta,na,clamp((sp<8?14:7.5*gr)*dt,0,1));c.slip=angDiff(na,c.ta);if(Math.abs(c.slip)>1.1)c.ta=na-Math.sign(c.slip)*1.1;ma=c.v>=0?c.ta:na;c.v*=1-Math.min(.9,Math.abs(Math.sin(c.slip))*.55*dt);}else c.slip=0;
   const nx=c.x+Math.cos(ma)*c.v*dt,nz=c.z+Math.sin(ma)*c.v*dt;
   if(!carHitsWall(c,nx,nz,na)){c.x=nx;c.z=nz;c.a=na;return false;}
-  const imp=Math.abs(c.v);
+  const imp=Math.abs(c.v);if(c===P.car&&mission&&mission.id==='drunk'&&mission.stage==='ride'&&imp>6&&time>(mission.bumpT||0)){mission.bumpT=time+1.2;mission.bumps++;toast('🤢 אוי… הבטן שלי…');}
   if(!carHitsWall(c,nx,c.z,c.a)){c.x=nx;c.v*=.94;}else if(!carHitsWall(c,c.x,nz,c.a)){c.z=nz;c.v*=.94;}
   else{if(imp>9){damageCar(c,(imp-9)*2.2);const sg=Math.sign(c.v);sparks(c.x+Math.cos(c.a)*c.w/2*sg,.8,c.z+Math.sin(c.a)*c.w/2*sg);if(c===P.car){sfx('crash',clamp(imp/30,.2,1));cam.shake=Math.min(.5,imp/60);}}c.v=-c.v*.3;}
   return true;
@@ -1298,7 +1300,7 @@ function renderMenu(){const el=$('pcbody');let h='';document.querySelectorAll('.
   const hub=tab.startsWith('hub:');document.querySelector('.tabs').style.display=hub?'none':'';document.querySelector('.pctop h2').textContent=hub?hubInfo(tab.slice(4)).title:'💻 מחשב העיר';
   if(hub){el.innerHTML=renderHub(tab.slice(4));return;}
   if(tab==='m'){if(mission)h+=`<div class="item"><div class="ic">⏳</div><div class="tx"><b>${mission.title}</b><p>המשימה פעילה עכשיו.</p></div><button class="pcbtn red" data-cancel>בטל משימה</button></div>`;
-    for(const m of MISSIONS)h+=`<div class="item"><div class="ic">${m.icon}</div><div class="tx"><b>${m.title}</b><p>${m.desc}</p><span class="pr">+$${m.reward}</span></div><button class="pcbtn" data-mission="${m.id}" ${mission?'disabled':''}>התחל</button></div>`;}
+    h+=renderStory();}
   else if(tab==='a'){h+=renderAch();}
   else if(tab==='g'){h+=renderOnline();if(!garage.length)h+=`<p class="note">עוד אין לך רכבים משלך.<br>בקר בסוכנות היוקרה 🏎️ (מסומנת בזהב במפה) כדי לקנות.</p>`;
     else garage.forEach((e,i)=>{const t=CT[e.k]||PLANES[e.k]||BOATS[e.k],nn=(NEONS.find(n=>n[0]===e.neon)||[0,''])[1];h+=`<div class="item"><div class="ic"><span style="display:inline-block;width:30px;height:30px;border-radius:50%;background:#${e.col.toString(16).padStart(6,'0')};border:2px solid #fff"></span></div><div class="tx"><b>${t.name}</b><p>${t.tag}${e.neon?' · ניאון '+nn:''}</p></div><button class="pcbtn" data-call="${i}">הזמן לכאן</button></div>`;});}
@@ -1317,6 +1319,7 @@ function farLane(a,b){return randomLane(P.x,P.z,a,b,300)||randomLane(P.x,P.z,20,
 let beam=null,wpBeam=null,waypoint=null;
 MISSIONS.push({id:'taxi',title:'נהג מונית',desc:'הסע 3 נוסעים ליעדים שלהם. מונית תחכה לידך.',reward:500,icon:'🚕'},{id:'medic',title:'פרמדיק',desc:'קח אמבולנס, אסוף 3 פצועים והבא אותם לבית החולים.',reward:1600,icon:'🚑'},{id:'escape',title:'בריחה גדולה',desc:'המשטרה רודפת אחריך עם 3 כוכבים. תעלים אותם תוך 2 דקות.',reward:1500,icon:'🚨'},{id:'pizza',title:'שליח פיצה',desc:'מסור 5 פיצות לבתים בשכונת הווילות לפני שהן מתקררות.',reward:900,icon:'🍕'});
 function missionExtraStart(id,m){
+  if(peopleStart(id,m))return true;
   if(id==='aliens'){alienStart(m);return true;}if(id==='treasure'){treasureStart(m);return true;}if(id==='spy'){spyStart(m);return true;}
   if(m16Start(id,m))return true;
   if(id==='casinoheist'){casinoHeistStart(m);return true;}if(id==='trainheist'){trainHeistStart(m);return true;}
@@ -1329,6 +1332,7 @@ function missionExtraStart(id,m){
   if(id==='pizza'){const hs=[];for(const b of blocks)if(b.di===3)for(const r of b.rects)if(r.house)hs.push({x:r.x+r.w/2,z:r.z+r.d+1.3});hs.sort((a,b)=>D2(a.x,a.z,P.x,P.z)-D2(b.x,b.z,P.x,P.z));const list=hs.slice(0,14).sort(()=>R()-.5).slice(0,5);mission={id,title:m.title,reward:m.reward,list,idx:0,target:list[0],timer:160};return true;}
   return false;}
 function missionExtraUpdate(M,dt){
+  if(peopleUpdate(M,dt))return true;
   if(M.id==='aliens'){alienUpdate(M,dt);return true;}if(M.id==='treasure'){treasureUpdate(M);return true;}if(M.id==='spy'){spyUpdate(M,dt);return true;}
   if(m16Update(M,dt))return true;
   if(M.id==='trainheist'){trainHeistUpdate(M,dt);return true;}if(M.id==='favor'){favorUpdate(M,dt);return true;}
@@ -1361,8 +1365,8 @@ function startMission(id){
   else if(id==='steal'){const t=farLane(90,150);const c=mkCar(t.x,t.z,DIRA[t.dir],'sports',0xe6b422);c.golden=true;c.persist=true;cars.push(c);const g=randomLane(t.x,t.z,120,200,300)||farLane(80,200);mission={id,title:m.title,reward:m.reward,car:c,garage:{x:g.x,z:g.z},target:c,timer:null};}
   else if(id==='gang'){const t=farLane(100,170);const v=mkCar(t.x,t.z,DIRA[t.dir],'van',0x5b2d8a);v.persist=true;v.hp=v.maxhp=240;cars.push(v);const gang=[];for(let i=0;i<5;i++){const p=randomWalk(t.x,t.z,3,14,80)||{x:t.x+rr(-2,2),z:t.z+rr(-2,2)};const g=mkPed(p.x,p.z,'gang');g.state='guard';g.persist=true;peds.push(g);gang.push(g);}mission={id,title:m.title,reward:m.reward,van:v,gang,target:v,timer:null};}
   big(m.title,m.desc,'#58c8ff',2800);}
-function endMission(){if(!mission)return;if(mission.id==='aliens'){for(const u of mission.ufos||[])scene.remove(u.g);for(const a of aliens){a.persist=false;a.state='dead';a.deadT=0;}aliens=[];}if(mission.id==='treasure'&&mission.chest)scene.remove(mission.chest);if(mission.p&&mission.id==='spy')mission.p.persist=false;if(mission.car&&mission.id==='spy')mission.car.persist=false;if(mission.ms)for(const m of mission.ms)scene.remove(m);if(mission.id==='zombie'){for(const z of zombies){z.persist=false;z.state='dead';z.deadT=0;}zombies=[];}if(mission.racers)for(const c of mission.racers){c.persist=false;c.driver=null;}if(mission.cab)mission.cab.persist=false;if(mission.amb){mission.amb.persist=false;mission.amb.siren=false;}for(const q of [mission.pass,mission.pat])if(q){peds=peds.filter(p=>p!==q);removePed(q);}if(mission.car)mission.car.persist=false;if(mission.van)mission.van.persist=false;if(mission.gang)for(const g of mission.gang)g.persist=false;mission=null;}
-function successMission(){const r=mission.reward;P.money+=r;addXP(120);endMission();big('משימה הושלמה!',`+$${r}`,'#6dff9e');sfx('win');}
+function endMission(){if(!mission)return;peopleEnd(mission);if(mission.id==='aliens'){for(const u of mission.ufos||[])scene.remove(u.g);for(const a of aliens){a.persist=false;a.state='dead';a.deadT=0;}aliens=[];}if(mission.id==='treasure'&&mission.chest)scene.remove(mission.chest);if(mission.p&&mission.id==='spy')mission.p.persist=false;if(mission.car&&mission.id==='spy')mission.car.persist=false;if(mission.ms)for(const m of mission.ms)scene.remove(m);if(mission.id==='zombie'){for(const z of zombies){z.persist=false;z.state='dead';z.deadT=0;}zombies=[];}if(mission.racers)for(const c of mission.racers){c.persist=false;c.driver=null;}if(mission.cab)mission.cab.persist=false;if(mission.amb){mission.amb.persist=false;mission.amb.siren=false;}for(const q of [mission.pass,mission.pat])if(q){peds=peds.filter(p=>p!==q);removePed(q);}if(mission.car)mission.car.persist=false;if(mission.van)mission.van.persist=false;if(mission.gang)for(const g of mission.gang)g.persist=false;mission=null;}
+function successMission(){storyDone(mission.id);const r=mission.reward;P.money+=r;addXP(120);endMission();big('משימה הושלמה!',`+$${r}`,'#6dff9e');sfx('win');}
 function failMission(reason,silent){endMission();if(!silent){big('המשימה נכשלה',reason||'','#ff3d7f');sfx('fail');}}
 function missionUpdate(dt){if(!mission)return;const M=mission;
   if(M.timer!=null){M.timer-=dt;if(M.timer<=0){failMission('נגמר הזמן');return;}}
@@ -1544,7 +1548,7 @@ function renderCheckin(){const c=checkin,D0=DEST[c.dest];const st=[['🧳','צ׳
   let h=`<div class="pass"><b>🎫 כרטיס עלייה למטוס</b><span>${myNick||'נוסע'} · אל ${D0.icon} ${D0.name}</span><span>שער ${c.gate} · מושב ${c.seat} · $${tripPrice(c.dest,'air')}</span></div>`;
   st.forEach((s,i)=>{const done=i<c.step,cur=i===c.step;h+=`<div class="item" style="opacity:${i>c.step?.45:1}"><div class="ic">${done?'✅':s[0]}</div><div class="tx"><b>${s[1]}</b><p>${done?c.msg[i]:s[2]}</p></div>${cur?`<button class="pcbtn" data-ck="1">${s[3]}</button>`:''}</div>`;});
   return h+`<button class="pcbtn red" data-ckx="1" style="width:100%;margin-top:6px">בטל טיסה</button>`;}
-function hubClick(t){const d=t.dataset;if(p9Click(t))return true;if(p8Click(t))return true;if(rtcClick(t))return true;if(extraHubClick(t))return true;if(extraHubClick2(t))return true;
+function hubClick(t){const d=t.dataset;if(storyClick(t))return true;if(p9Click(t))return true;if(p8Click(t))return true;if(rtcClick(t))return true;if(extraHubClick(t))return true;if(extraHubClick2(t))return true;
   if(d.fly){if(P.money<tripPrice(d.fly,'air'))return true;checkin={dest:d.fly,step:0,msg:[],gate:1+((R()*12)|0),seat:(10+((R()*25)|0))+'ABCDEF'[(R()*6)|0],beep:false,beeped:false};renderMenu();return true;}
   if(d.ckx){checkin=null;renderMenu();return true;}
   if(d.ck){const c=checkin;if(!c)return true;
@@ -2622,6 +2626,99 @@ function updReal(dt){realAudio();const c=P.car,now=AC?AC.currentTime:0;
   // --- city hum + distant horns
   const city=inCity(pp.x,pp.z)&&!menuOpen;if(amb)amb.g.gain.setTargetAtTime(city?.035+.02*dayK:0,now,.5);
   if(city&&started){hornT-=dt;if(hornT<=0){hornT=rr(10,28);sfx('horn',rr(.06,.12));}}}
+/* ============ people: crosswalks, livelier pedestrians, story missions ============ */
+// --- subtitles for mission dialogue
+let subT=null;function line(who,txt,dur=4.5){let el=$('subt');if(!el){el=document.createElement('div');el.id='subt';document.body.appendChild(el);}el.textContent='';const b=document.createElement('b');b.textContent=who+': ';el.appendChild(b);el.appendChild(document.createTextNode(txt));el.classList.add('show');clearTimeout(subT);subT=setTimeout(()=>el.classList.remove('show'),dur*1000);}
+// --- crosswalks: peds walk to the zebra, wait for the cars' red light, then cross
+function redLeft(m,k,ax){const ph=(time+((m*7+k*13)%16))%16;if(ax===0)return ph>=7?16-ph:0;return ph<8?8-ph:ph>=15?24-ph:0;}
+function xwalkFor(p){const L=8*T,m=Math.round((p.x-T)/L),k=Math.round((p.z-T)/L);if(m<0||k<0||m>BL||k>BL)return null;const ix=m*L,iz=k*L,e=2*T+1.2,o=[];
+  if(m>0)o.push([ix-1.8,iz-1.2,ix-1.8,iz+e,0]);if(m<BL)o.push([ix+2*T+1.8,iz-1.2,ix+2*T+1.8,iz+e,0]);if(k>0)o.push([ix-1.2,iz-1.8,ix+e,iz-1.8,1]);if(k<BL)o.push([ix-1.2,iz+2*T+1.8,ix+e,iz+2*T+1.8,1]);
+  let best=null,bd=14*14;for(const [x0,z0,x1,z1,ax] of o)for(const [a,b] of [[[x0,z0],[x1,z1]],[[x1,z1],[x0,z0]]]){const d=D2(p.x,p.z,a[0],a[1]);if(d<bd&&isWalk(a[0],a[1])&&isWalk(b[0],b[1])&&!solidC(a[0],a[1],.3)){bd=d;best={sx:a[0],sz:a[1],ex:b[0],ez:b[1],m,k,ax};}}return best;}
+let xCount=0;
+function walkTo(p,x,z,sp,dt){const a=Math.atan2(z-p.z,x-p.x);p.a=lerpA(p.a,a,dt*8);const d=Math.hypot(x-p.x,z-p.z),s=Math.min(sp*dt,d);if(!moveC(p,Math.cos(p.a)*s,Math.sin(p.a)*s,.3))return d;p.walk+=s;p.moving=true;return d;}
+const CHATL=['ראית את המשחק אתמול? ⚽','איזה חום היום… 🥵','אני מאחר לעבודה!','שמעת מה קרה בבנק? 😱','הקפה פה הכי טוב בעיר ☕','מתי כבר יהיה סוף שבוע…','הבוס שלי השתגע 🙄','קנית כבר כרטיס להופעה? 🎤'],PHONEL=['📱 כן… כן… אני בדרך!','📱 אמא, אני אחזור לארוחת ערב','📱 מה?! לא שומע אותך!','📱 יאללה, נדבר אחר כך','📱 חחח באמת?!'];
+function pedLife(p){if(p.kind!=='civ'||p.persist||D2(p.x,p.z,P.x,P.z)>90*90)return false;const r=R();
+  if(r<.45&&xCount<8){const x=xwalkFor(p);if(x){p.xw=x;p.state='toX';p.xT=15;return true;}}
+  if(r<.6){const o=peds.find(q=>q!==p&&q.kind==='civ'&&q.state==='walk'&&!q.persist&&D2(q.x,q.z,p.x,p.z)<6);if(o){const t=rr(5,10);for(const [a,b] of [[p,o],[o,p]]){a.state='chat';a.chatT=t;a.mate=b;a.a=Math.atan2(b.z-a.z,b.x-a.x);}showBubble(p,pick(CHATL),null,null,3.5);return true;}}
+  if(r<.72){p.state='phone';p.chatT=rr(4,8);if(R()<.6)showBubble(p,pick(PHONEL),null,null,3);return true;}return false;}
+function pedStates(p,dt){const s=p.state;
+  if(s==='toX'){p.xT-=dt;const x=p.xw;if(p.xT<=0){p.state='walk';return true;}if(walkTo(p,x.sx,x.sz,p.spd||1.3,dt)<.5){p.state='waitX';p.xT=40;}return true;}
+  if(s==='waitX'){const x=p.xw;p.xT-=dt;p.a=lerpA(p.a,Math.atan2(x.ez-p.z,x.ex-p.x),dt*6);if(p.xT<=0){p.state='walk';return true;}if(redLeft(x.m,x.k,x.ax)>=6.3&&xCount<8){p.state='crossX';xCount++;p.xT=12;}return true;}
+  if(s==='crossX'){const x=p.xw;p.xT-=dt;const d=walkTo(p,x.ex,x.ez,2.2,dt);if(d<.5||p.xT<=0){xCount=Math.max(0,xCount-1);p.state='walk';p.a=p.ta=Math.atan2(x.ez-x.sz,x.ex-x.sx);p.t=rr(3,6);p.xw=null;}return true;}
+  if(s==='chat'||s==='phone'){p.chatT-=dt;if(s==='chat'&&p.mate){p.a=lerpA(p.a,Math.atan2(p.mate.z-p.z,p.mate.x-p.x),dt*5);if(p.mate.state!=='chat')p.chatT=0;if(R()<dt*.25)showBubble(p,pick(CHATL),null,null,3.5);}if(p.chatT<=0){p.state='walk';p.mate=null;p.ta=p.a+rr(-2,2);}return true;}
+  if(s==='thief'){p.rs=Math.max(4.4,(p.rs||5.9)-dt*.05);const pp=me(),a=Math.atan2(p.z-pp.z,p.x-pp.x)+Math.sin(time*1.7+p.id)*.5+p.detour;p.a=lerpA(p.a,a,dt*6);if(!moveC(p,Math.cos(p.a)*p.rs*dt,Math.sin(p.a)*p.rs*dt,.35)){p.detour=rr(-1.8,1.8);}else if(R()<dt*.3)p.detour*=.5;p.walk+=p.rs*dt;p.moving=true;return true;}
+  if(s==='follow'){const pp=me(),d=Math.hypot(pp.x-p.x,pp.z-p.z);if(d>2.2)walkTo(p,pp.x,pp.z,Math.min(4.8,(d-1.5)*2.2),dt);else p.a=lerpA(p.a,Math.atan2(pp.z-p.z,pp.x-p.x),dt*4);return true;}
+  return false;}
+// --- story: missions come in a fixed order; you can skip one
+const STORY=['delivery','taxi','thief','pizza','race','lostkid','medic','school','drunk','steal','vip','escape','killer','stunt','gang','chase','collector','landing','boatrace','rings','spy','bank','zombie','trainheist','aliens','casinoheist','treasure'];
+function storyList(){const ids=MISSIONS.map(m=>m.id),L=STORY.filter(i=>ids.includes(i));for(const i of ids)if(!L.includes(i))L.push(i);return L;}
+function storyCur(){return storyList()[stats.story||0]||null;}
+function storyNext(){stats.story=(stats.story||0)+1;save();const n=storyCur(),m=MISSIONS.find(x=>x.id===n);if(m)setTimeout(()=>toast(`📖 המשימה הבאה: ${m.icon} ${m.title} (במחשב הכחול)`),3200);}
+function storyDone(id){if(id&&id===storyCur())storyNext();}
+function renderStory(){const L=storyList(),i=Math.min(stats.story||0,L.length),N=L.length,esc=x=>String(x).replace(/[<>&"]/g,'');
+  let h=`<div class="item" style="display:block"><b>📖 הסיפור: משימה ${Math.min(i+1,N)} מתוך ${N}</b><div style="height:10px;background:rgba(255,255,255,.12);border-radius:6px;margin:8px 0;overflow:hidden"><div style="height:100%;width:${Math.round(i/N*100)}%;background:linear-gradient(90deg,#6dff9e,#58c8ff)"></div></div></div>`;
+  if(i>=N){h+=`<p class="note">🏆 סיימת את כל המשימות בסיפור! אפשר לשחק בכל משימה שוב:</p>`;for(const m of MISSIONS)h+=`<div class="item"><div class="ic">${m.icon}</div><div class="tx"><b>${esc(m.title)}</b><p>${esc(m.desc)}</p><span class="pr">+$${m.reward}</span></div><button class="pcbtn" data-mission="${m.id}" ${mission?'disabled':''}>שחק</button></div>`;return h;}
+  const m=MISSIONS.find(x=>x.id===L[i]);
+  h+=`<div class="item" style="display:block;border:2px solid #ffd84a"><div style="display:flex;gap:10px;align-items:center"><div class="ic">${m.icon}</div><div class="tx"><b>${esc(m.title)}</b><p>${esc(m.desc)}</p><span class="pr">+$${m.reward}</span></div></div>
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="pcbtn" data-mission="${m.id}" style="flex:2" ${mission?'disabled':''}>▶️ התחל</button><button class="pcbtn red" data-skipm="1" style="flex:1" ${mission?'disabled':''}>⏭️ דלג</button></div></div>`;
+  const nx=L.slice(i+1,i+4).map(id=>MISSIONS.find(x=>x.id===id));if(nx.length)h+=`<p class="note">🔒 הבאות בתור: ${nx.map(x=>x.icon+' '+esc(x.title)).join(' · ')}</p>`;
+  if(i)h+=`<p class="note">✅ עברת ${i} משימות</p>`;return h;}
+function storyClick(t){if(!t.dataset.skipm)return false;if(mission)return true;const m=MISSIONS.find(x=>x.id===storyCur());if(!m)return true;if(!confirm(`לדלג על "${m.title}"? לא תקבל את הפרס שלה.`))return true;storyNext();toast('⏭️ דילגת על המשימה');renderMenu();return true;}
+// --- new missions with people
+MISSIONS.push({id:'thief',title:'חטיפת תיק',desc:'גנב חטף תיק לאישה ברחוב! רדוף אחריו ברגל, תפוס אותו והחזר לה את התיק.',reward:700,icon:'👜'},
+  {id:'lostkid',title:'הילד האבוד',desc:'ילד קטן הלך לאיבוד ובוכה. לך אליו ותוביל אותו ברגל אל אמא שלו.',reward:800,icon:'🧒'},
+  {id:'drunk',title:'החבר השיכור',desc:'חבר שלך שתה יותר מדי. הסע אותו הביתה בעדינות. אם תתנגש או תחליק יותר מדי, הוא יקיא!',reward:1100,icon:'🍺'},
+  {id:'killer',title:'הנוסע המסתורי',desc:'עוד משמרת במונית… אבל הנוסע הזה מוזר. משהו לא בסדר איתו.',reward:5000,icon:'🔪'});
+function npc(x,z,look,state){const p=mkPed(x,z,'civ');if(look){disposeHuman(p.h);p.h=buildHuman(Object.assign({skin:pick(skins),hair:pick(hairs),pants:0x2a3550,hairStyle:'short',sleeve:1},look));}p.state=state||'wait';p.persist=true;peds.push(p);return p;}
+const spotNear=(x,z,a,b)=>randomWalk(x,z,a,b,200)||randomWalk(x,z,5,b*2,300)||{x,z};
+function peopleStart(id,m){const base={id,title:m.title,reward:m.reward,timer:null};
+  if(id==='thief'){const s=spotNear(P.x,P.z,18,40),w=npc(s.x,s.z,{fem:true,shirt:0xd35400,skirt:0x8e44ad,hairStyle:'long'}),q=spotNear(s.x,s.z,3,6),t=npc(q.x,q.z,{shirt:0x222222,pants:0x1a1a1a,hairStyle:'buzz',hatT:'beanie',hatC:0x111111},'thief');
+    mission=Object.assign(base,{woman:w,thief:t,npcs:[w,t],stage:'chase',target:t,timer:110});setTimeout(()=>{showBubble(w,'😱 עזרו! הוא גנב לי את התיק!',null,null,4);line('👩 אישה','עזרו לי! הבחור עם הכובע השחור חטף לי את התיק!');},600);return true;}
+  if(id==='lostkid'){const s=spotNear(P.x,P.z,20,50),k=npc(s.x,s.z,{shirt:0x3498db,pants:0xc0392b,hairStyle:'short'});k.h.g.scale.setScalar(.64);k.kid=true;const q=spotNear(s.x,s.z,130,230),mo=npc(q.x,q.z,{fem:true,shirt:0xf1c40f,pants:0x2c3e50,hairStyle:'pony'});
+    mission=Object.assign(base,{kid:k,mom:mo,npcs:[k,mo],stage:'find',target:k});setTimeout(()=>showBubble(k,'😭 אמא!! איפה את?',null,null,4),600);return true;}
+  if(id==='drunk'){const s=spotNear(P.x,P.z,25,70),f=npc(s.x,s.z,{shirt:0x16a085,pants:0x3a3a3a,hairStyle:'afro',beard:true});
+    mission=Object.assign(base,{fr:f,npcs:[f],stage:'pick',target:f,bumps:0,sick:0,talkT:6});setTimeout(()=>showBubble(f,'🥴 אחייי! בוא תיקח אותי הביתה… *היק*',null,null,4),600);return true;}
+  if(id==='killer'){const lp=randomLane(P.x,P.z,8,40,200)||farLane(10,80),c=mkCar(lp.x,lp.z,DIRA[lp.dir],'taxi');c.persist=true;cars.push(c);mission=Object.assign(base,{cab:c,npcs:[],stage:'cab',target:c,t:0,said:0});return true;}
+  return false;}
+function dropNpc(M,q){if(!q)return;peds=peds.filter(p=>p!==q);removePed(q);M.npcs=M.npcs.filter(p=>p!==q);}
+function peopleEnd(M){if(M&&M.wp)waypoint=null;if(M&&M.npcs){for(const q of M.npcs){peds=peds.filter(p=>p!==q);removePed(q);}M.npcs=[];}}
+const DRUNKL=['אחי… אתה החבר הכי טוב שלי בעולם… *היק*','למה הכביש זז?! 😵','אני אשיר לך שיר… 🎵 לה לה לההה','עצור! לא, לא, סע… סע…','אני לא שיכור, אני רק… שמח 🥴','מתי מגיעים? אני רעב לשווארמה 🌯'];
+function peopleUpdate(M,dt){const pp=me(),foot=!P.car&&!P.boat&&!P.plane;
+  if(M.id==='thief'){const t=M.thief,w=M.woman;if(w.state==='dead'){failMission('האישה נפגעה');return true;}
+    if(M.stage==='chase'){if(t.state==='dead'){M.stage='back';M.target=w;toast('👜 הגנב נפל. קח את התיק והחזר אותו');sfx('pickup');}
+      else if(foot&&D(pp,t)<1.8){t.state='surrender';say(t,'panic',true);line('🧢 גנב','בסדר, בסדר! הנה התיק, אל תרביץ לי!');sfx('pickup');M.stage='back';M.target=w;}
+      else if(D(pp,t)>150){failMission('הגנב ברח');return true;}
+      M.status=foot?`רדוף אחרי הגנב! (${Math.round(D(pp,t))} מ׳)`:'צא מהרכב ורדוף אחריו ברגל!';}
+    else{M.status='החזר את התיק לאישה 👜';if(D(pp,w)<3){line('👩 אישה','התיק שלי! תודה רבה, אתה גיבור אמיתי! ❤️');showBubble(w,'❤️ תודה!',null,null,3);successMission();}}return true;}
+  if(M.id==='lostkid'){const k=M.kid,mo=M.mom;if(k.state==='dead'){failMission('הילד נפגע 😢');return true;}if(mo.state==='dead'){failMission('האמא נפגעה');return true;}
+    if(M.stage==='find'){M.target=k;M.status='לך אל הילד שבוכה';if(R()<dt*.2)showBubble(k,'😭 אמא…',null,null,2.5);if(foot&&D(pp,k)<3){k.state='follow';M.stage='lead';M.target=mo;line('🧒 ילד','אתה תעזור לי למצוא את אמא? יש לה חולצה צהובה!');}}
+    else{const d=D(pp,k);M.status=P.car?'הילד מפחד ממכוניות! צא ולך ברגל':`הובל את הילד לאמא בחולצה הצהובה 💛`;
+      if(d>45){k.state='wait';M.stage='find';line('🧒 ילד','חכה!! אל תשאיר אותי לבד! 😭');}
+      if(D(k,mo)<3.5){k.state='wait';line('👩 אמא','הילד שלי!!! תודה, תודה! חיפשתי אותו בכל מקום 😭❤️');showBubble(mo,'❤️',null,null,3);successMission();}}return true;}
+  if(M.id==='drunk'){const f=M.fr;
+    if(M.stage==='pick'){if(f.state==='dead'){failMission('החבר נפגע');return true;}M.target=f;M.status=P.car?'עצור ליד החבר שלך':'קח רכב ואסוף את החבר';if(P.car&&D(P.car,f)<9&&Math.abs(P.car.v)<2.5){dropNpc(M,f);M.fr=null;const t=farLane(220,420);M.home={x:t.x,z:t.z};M.target=M.home;M.stage='ride';line('🥴 החבר',pick(DRUNKL));sfx('pickup');}return true;}
+    if(!P.car){M.status='חזור לרכב! החבר מחכה בפנים';return true;}
+    M.sick+=Math.abs(P.car.slip||0)>.25&&Math.abs(P.car.v)>8?dt*.35:0;M.talkT-=dt;if(M.talkT<=0){M.talkT=rr(7,11);line('🥴 החבר',pick(DRUNKL));}
+    const lvl=M.bumps+M.sick;if(lvl>=3){line('🥴 החבר','אוי… עצור… 🤮');failMission('🤮 החבר הקיא לך באוטו!');return true;}
+    M.status=`הסע הביתה בעדינות · בחילה ${'🤢'.repeat(Math.floor(lvl))}${'▫️'.repeat(3-Math.floor(lvl))}`;
+    if(D(P.car,M.home)<10&&Math.abs(P.car.v)<2.5){line('🥴 החבר','הגענו? אתה… אתה אח שלי. אני אוהב אותך… 😴');successMission();}return true;}
+  if(M.id==='killer'){const c=M.cab;if(c.dead&&M.stage!=='catch'){failMission('המונית הושמדה');return true;}
+    if(M.stage==='cab'){M.target=c;M.status='היכנס למונית 🚕';if(P.car===c){const q=spotNear(P.x,P.z,90,200);M.k=npc(q.x,q.z,{shirt:0x111111,jacket:0x1a1a1a,pants:0x111111,hairStyle:'buzz',hatT:'cap',hatC:0x111111,beard:true});M.npcs.push(M.k);M.stage='pick';}return true;}
+    if(M.stage==='pick'){M.target=M.k;M.status=P.car===c?'אסוף נוסע (עצור לידו)':'היכנס למונית 🚕';if(P.car===c&&D(c,M.k)<9&&Math.abs(c.v)<2.5){dropNpc(M,M.k);M.k=null;const t=farLane(260,420);M.dest={x:t.x,z:t.z};M.target=M.dest;M.stage='ride';M.t=0;sfx('pickup');line('🧥 נוסע','לנמל. מחסן 7. ותיסע בשקט, בלי שאלות.');}return true;}
+    if(M.stage==='ride'){M.t+=dt;
+      if(M.said===0&&M.t>10){M.said=1;big('📻 מבזק חדשות','רוצח מסוכן ברח מהכלא! גבר במעיל שחור עם זקן. אל תתקרבו אליו!','#ff3d7f',4800);sfx('fail');}
+      else if(M.said===1&&M.t>17){M.said=2;line('🧥 נוסע','…למה אתה מסתכל עליי במראה? תמשיך לנסוע.');}
+      else if(M.said===2&&M.t>24){M.said=3;line('🧥 נוסע','🔪 אל תעשה שטויות. סע לנמל ואף אחד לא ייפגע.',5);setTimeout(()=>big('מה תעשה?','🚔 סע לתחנת המשטרה (הסימון הצהוב), או לנמל כמו שהוא אומר','#ffd84a',4500),5200);}
+      if(M.said>=3){M.target=POLICE;M.status='🚔 תחנת המשטרה (סימון צהוב) או 🏚️ הנמל (במפה)';if(!M.wp){M.wp=1;waypoint={x:M.dest.x,z:M.dest.z};}if(M.t>70&&R()<dt*.25){hurtPlayer(7);line('🧥 נוסע','🔪 מהר יותר! אני מאבד סבלנות!');cam.shake=.2;}}
+      const out=P.car!==c,atP=M.said>=3&&!out&&D(c,POLICE)<16&&Math.abs(c.v)<3,atD=!out&&D(c,M.dest)<10&&Math.abs(c.v)<2.5;
+      if(atD){waypoint=null;line('🧥 נוסע','ילד טוב. עכשיו תשכח שראית אותי.');failMission('הרוצח נעלם בחשכה… היית צריך לנסוע למשטרה! 😨');return true;}
+      if(atP||out){const sd=c.a+Math.PI/2,k=npc(c.x+Math.cos(sd)*2.4,c.z+Math.sin(sd)*2.4,{shirt:0x111111,jacket:0x1a1a1a,pants:0x111111,hairStyle:'buzz',hatT:'cap',hatC:0x111111,beard:true},'thief');k.rs=6.3;k.hp=60;M.k=k;M.npcs.push(k);M.stage='catch';M.target=k;M.timer=75;waypoint=null;line('🧥 רוצח',atP?'שוטרים?! בגדת בי!! 😡':'אתה חושב שאתה חכם?!');big('🔪 הרוצח בורח!','תפוס אותו! רוץ אחריו ותגיע אליו','#ff3d7f',2600);if(atP){for(let i=0;i<2;i++){const q=spotNear(POLICE.x,POLICE.z,2,6),cp=mkPed(q.x,q.z,'cop');peds.push(cp);}}}
+      else M.status=M.said>=3?M.status:'הסע את הנוסע לנמל';return true;}
+    if(M.stage==='catch'){const k=M.k;if(k.state==='dead'){big('תפסת את הרוצח!','העיר בטוחה בזכותך 🦸','#6dff9e',3000);successMission();return true;}
+      if(k.state==='surrender'){M.status='הרוצח נכנע! 🚔';if(!M.won){M.won=1;line('🧥 רוצח','בסדר… ניצחת. 😤');setTimeout(()=>{if(mission===M)successMission();},2500);}return true;}
+      const d=D(pp,k);M.status=`תפוס את הרוצח! (${Math.round(d)} מ׳)`;if(foot&&d<1.8){k.state='surrender';sfx('pickup');}else if(d<2.6&&R()<dt*.8){hurtPlayer(6);showBubble(k,'🔪',null,null,1);}if(d>170){failMission('הרוצח ברח');return true;}return true;}
+    return true;}
+  return false;}
 /* ============ accidents & arguments ============ */
 function crashFight(a,b,imp){const pl=a===P.car||b===P.car;
   if(pl){const o=a===P.car?b:a;if(o.driver==='ai'&&imp>10&&R()<.6){const q=ejectDriver(o,false,false);q.state='fight';q.fightT=15;say(q,'fight',true);}}
@@ -3361,12 +3458,13 @@ function updatePeds(dt){
     if(p.state==='deliver'){deliverAI(p,dt);continue;}
     if(p.state==='shopper'){shopperAI(p,dt);continue;}
     if(p.state==='talk'){p.talkT-=dt;p.a=Math.atan2(P.z-p.z,P.x-p.x);if(p.talkT<=0)p.state='walk';continue;}
+    if(pedStates(p,dt))continue;
     if(p.state==='wait'||p.state==='injured'||p.state==='surrender'){if(p.state==='wait')p.a=Math.atan2(P.z-p.z,P.x-p.x);continue;}
     if(p.state==='guard'){p.t-=dt;if(p.t<=0){p.a+=rr(-1.2,1.2);p.t=rr(1.5,3.5);}continue;}
     if(p.state==='flee'){const a=Math.atan2(p.z-p.flee.z,p.x-p.flee.x)+Math.sin(time*2+p.id)*.35+p.detour;p.a=lerpA(p.a,a,dt*8);if(!moveC(p,Math.cos(p.a)*5.2*dt,Math.sin(p.a)*5.2*dt,.35))p.detour=rr(-1.6,1.6);p.walk+=5.2*dt;p.moving=true;p.t-=dt;if(p.t<=0){p.state='walk';p.detour=0;}continue;}
-    p.t-=dt;if(p.t<=0){p.a+=rr(-1.4,1.4);p.t=rr(2,7);}
-    const lx=p.x+Math.cos(p.a)*.7,lz=p.z+Math.sin(p.a)*.7,tt=tileType(Math.floor(lx/T),Math.floor(lz/T));
-    if(isSolid(lx,lz)||tt==='R'||(tt==='X'&&!isWalk(lx,lz)))p.a+=Math.PI*rr(.6,1.4);else{p.x+=Math.cos(p.a)*1.3*dt;p.z+=Math.sin(p.a)*1.3*dt;p.walk+=1.3*dt;p.moving=true;}
+    p.t-=dt;if(p.t<=0){p.ta=p.a+rr(-1.4,1.4);p.t=rr(2,7);if(R()<.35&&pedLife(p))continue;}if(p.ta!=null)p.a=lerpA(p.a,p.ta,dt*2.5);
+    const sp=p.spd||1.3,lx=p.x+Math.cos(p.a)*.7,lz=p.z+Math.sin(p.a)*.7,tt=tileType(Math.floor(lx/T),Math.floor(lz/T));
+    if(isSolid(lx,lz)||tt==='R'||(tt==='X'&&!isWalk(lx,lz))){p.a+=Math.PI*rr(.6,1.4);p.ta=p.a;}else{p.x+=Math.cos(p.a)*sp*dt;p.z+=Math.sin(p.a)*sp*dt;p.walk+=sp*dt;p.moving=true;}
   }
   ambT-=dt*.3;if(ambT<=0&&!P.car){ambT=rr(6,11);const c=peds.filter(p=>p.state==='walk'&&p.kind==='civ'&&D2(p.x,p.z,P.x,P.z)<100);if(c.length)say(pick(c),'ambient');}
 }
@@ -3497,7 +3595,7 @@ function syncModels(){
   for(const p of peds){const far=D2(p.x,p.z,pp.x,pp.z)>vis*vis;p.h.g.visible=!far;if(far)continue;const gy=groundY(p.x,p.z);p.h.g.position.set(p.x,gy,p.z);
     if(p.state==='injured'){p.h.g.rotation.set(0,-p.a,-Math.PI/2+.05);p.h.g.position.y=gy+.18;animHuman(p.h,0,false,false,0,false,'dead');}
     else if(p.state==='dead'){p.h.g.rotation.set(0,-p.a,-Math.PI/2+.05);p.h.g.position.y=gy+.18;animHuman(p.h,0,false,false,0,false,'dead');}
-    else{p.h.g.rotation.set(0,-p.a,0);animHuman(p.h,p.walk,p.moving,p.state==='hostile',p.swing||0,p.state==='flee',p.state==='surrender'?'surrender':null);}}
+    else{p.h.g.rotation.set(0,-p.a,0);animHuman(p.h,p.walk,p.moving,p.state==='hostile',p.swing||0,p.state==='flee'||p.state==='thief'||(p.state==='follow'&&p.moving&&p.kid),p.state==='surrender'?'surrender':null);}}
   const ph=P.h,bike=isBike(P.car);ph.g.visible=(!P.car||bike)&&!P.plane&&!P.train;
   if(ph.skis){const eq=(!!P.skiing||!!P.lift)&&!!P.gear;ph.skis.visible=eq&&P.gear==='ski';for(const pl of ph.poles)pl.visible=eq&&P.gear==='ski';ph.board.visible=eq&&P.gear==='board';}
   if(bike){const c=P.car,sp=MODELS[CT[c.type].model].sport;ph.g.position.set(c.x-Math.cos(c.a)*.25,c.y+(c.alt||0)+(MODELS[CT[c.type].model].seat||(sp?.97:.85))-.88+(c.whl||0)*.5,c.z-Math.sin(c.a)*.25);ph.g.rotation.set(c.lean||0,-c.a,(sp?-.4:-.1)+(c.whl||0),'YXZ');setGun(ph,null);animHuman(ph,0,false,false,0,false,'ride');}
