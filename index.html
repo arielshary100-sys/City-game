@@ -42,6 +42,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ink);color:var(-
 #missionBox{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);background:var(--panel);padding:7px 16px;border-radius:12px;font-weight:800;font-size:15px;z-index:5;text-align:center;border:2px solid var(--sun);max-width:44vw;pointer-events:none}
 #missionBox small{display:block;color:var(--sun);font-size:12px;font-weight:700}
 @media (max-width:520px){#missionBox{top:calc(env(safe-area-inset-top,0px) + 196px);max-width:80vw}}
+#chatFeed{position:fixed;left:10px;bottom:150px;z-index:6;pointer-events:none;max-width:min(70vw,360px);display:flex;flex-direction:column;gap:4px}.chatln{background:rgba(0,0,0,.55);color:#fff;padding:5px 10px;border-radius:10px;font-size:14px;transition:opacity .5s;direction:rtl}.chatln b{color:#6dff9e}
 #toast{position:fixed;left:50%;top:32%;transform:translateX(-50%);background:var(--panel);padding:9px 18px;border-radius:12px;font-weight:800;font-size:16px;z-index:7;pointer-events:none;opacity:0;transition:opacity .25s;text-align:center;max-width:86vw}
 #toast.show{opacity:1}
 #big{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:8;pointer-events:none;opacity:0;transition:opacity .3s}
@@ -183,7 +184,7 @@ body.photo #topBtns .sbtn:not(#bPhoto){display:none}
 <div id="talkBar"><button data-talk="what">מה קורה? 👋</button><button data-talk="hi">שלום! 😊</button><button data-talk="name">איך קוראים לך?</button><button data-talk="joke">ספר בדיחה 😄</button><button data-talk="compliment">יש לך סטייל 😎</button><button data-talk="money">יש לך כסף? 💸</button><button data-talk="bye">ביי 👋</button><button data-talk="mic" class="mic">🎤 דבר בקול</button></div>
 <div id="cross" class="hidden"></div>
 <canvas id="minimap" width="240" height="240"></canvas>
-<div id="topBtns"><button class="sbtn" id="bVoice" aria-label="קולות של אנשים">🔊</button><button class="sbtn" id="bPhone" aria-label="טלפון: המוסך שלי">📱</button><button class="sbtn" id="bMap" aria-label="מפה גדולה">🗺️</button><button class="sbtn" id="bFS" aria-label="מסך מלא">⛶</button><button class="sbtn" id="bFriends" aria-label="חברים">👥</button><button class="sbtn" id="bPhoto" aria-label="מצב צילום">📸</button><button class="sbtn" id="bCode" aria-label="קוד">🔑</button><button class="sbtn hidden" id="bPow" aria-label="מעוף">🦸</button><button class="sbtn" id="bBuild" aria-label="בנייה">🏗️</button></div>
+<div id="topBtns"><button class="sbtn" id="bVoice" aria-label="קולות של אנשים">🔊</button><button class="sbtn" id="bPhone" aria-label="טלפון: המוסך שלי">📱</button><button class="sbtn" id="bMap" aria-label="מפה גדולה">🗺️</button><button class="sbtn" id="bFS" aria-label="מסך מלא">⛶</button><button class="sbtn" id="bFriends" aria-label="חברים">👥</button><button class="sbtn hidden" id="bChat" aria-label="צ'אט">💬</button><button class="sbtn" id="bPhoto" aria-label="מצב צילום">📸</button><button class="sbtn" id="bCode" aria-label="קוד">🔑</button><button class="sbtn hidden" id="bPow" aria-label="מעוף">🦸</button><button class="sbtn" id="bBuild" aria-label="בנייה">🏗️</button></div>
 <div id="call"><span id="callA"></span><div><div id="callN"></div><div id="callT"></div></div></div>
 <div id="invite"><span id="invT"></span><button id="invY" class="pcbtn">הצטרף!</button><button id="invN" class="pcbtn red">לא</button></div>
 <div id="hud">
@@ -199,7 +200,7 @@ body.photo #topBtns .sbtn:not(#bPhoto){display:none}
 <div id="speedo" class="hidden"></div>
 <div id="radio" class="hidden"></div>
 <div id="missionBox" class="hidden"></div>
-<div id="toast"></div>
+<div id="toast"></div><div id="chatFeed"></div>
 <div id="zone"></div>
 <div id="robBar" class="hidden">🏪 שוד בתהליך… אל תזוז<div class="bar"><div id="robFill" style="width:0"></div></div></div>
 <div id="bigmap" class="overlay hidden">
@@ -1074,7 +1075,7 @@ function radioTick(){if(!AC||!P.car||!radioSt||menuOpen)return;const st=STATIONS
   step++;}
 function toggleRadio(){if(!P.car)return;radioSt=(radioSt+1)%STATIONS.length;toast(radioSt?STATIONS[radioSt].name:'📻 רדיו כבוי');}
 function updAudio(){if(!AC)return;const now=AC.currentTime;
-  eng.g.gain.setTargetAtTime(P.car&&!P.dead&&!menuOpen&&!MODELS[CT[P.car.type].model].animal?.035:0,now,.1);if(P.car)eng.o.frequency.setTargetAtTime(38+Math.abs(P.car.v)*4.2+(Math.abs(P.car.v)%9)*3,now,.05);
+  eng.g.gain.setTargetAtTime(P.car&&!P.dead&&!menuOpen&&!MODELS[CT[P.car.type].model].animal?.035:0,now,.1);if(P.car){const f=engFreq(P.car);eng.o.frequency.setTargetAtTime(f,now,.04);if(eng.o2)eng.o2.frequency.setTargetAtTime(f*.5,now,.04);}
   let nd=999;for(const c of cars)if(c.siren&&!c.dead){const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<nd)nd=d;}if(heli)nd=Math.min(nd,60);
   sir.g.gain.setTargetAtTime(menuOpen?0:.05*clamp(1-nd/90,0,1),now,.1);sir.o.frequency.setTargetAtTime(700+260*Math.sin(time*5),now,.02);
   radioGain.gain.setTargetAtTime(P.car&&radioSt&&!menuOpen?.1:0,now,.1);rainGain.gain.setTargetAtTime(.06*rainK*(menuOpen?.3:1),now,.2);}
@@ -1174,7 +1175,9 @@ function physCar(c,dt,thr,steer,hb){
   if(hb)c.v*=Math.max(0,1-2.2*dt);
   const mx=c.max*(c.hp<c.maxhp*.3?.6:1);c.v=clamp(c.v,-mx*.3,mx);
   const sf=clamp(c.v/5,-1,1)*(1-Math.min(.45,Math.abs(c.v)/100));
-  const na=c.a+steer*2.2*(c.grip||1)*(1-.22*rainK)*dt*sf*(hb?1.5:1),nx=c.x+Math.cos(na)*c.v*dt,nz=c.z+Math.sin(na)*c.v*dt;
+  const na=c.a+steer*2.2*(c.grip||1)*(1-.22*rainK)*dt*sf*(hb?1.5:1);let ma=na;
+  if(c===P.car&&!isBike(c)){if(c.ta==null||Math.abs(c.v)<2)c.ta=na;const gr=(c.grip||1)*(1-.4*rainK)*(hb?.22:1),sp=Math.abs(c.v);c.ta=lerpA(c.ta,na,clamp((sp<8?14:7.5*gr)*dt,0,1));c.slip=angDiff(na,c.ta);if(Math.abs(c.slip)>1.1)c.ta=na-Math.sign(c.slip)*1.1;ma=c.v>=0?c.ta:na;c.v*=1-Math.min(.9,Math.abs(Math.sin(c.slip))*.55*dt);}else c.slip=0;
+  const nx=c.x+Math.cos(ma)*c.v*dt,nz=c.z+Math.sin(ma)*c.v*dt;
   if(!carHitsWall(c,nx,nz,na)){c.x=nx;c.z=nz;c.a=na;return false;}
   const imp=Math.abs(c.v);
   if(!carHitsWall(c,nx,c.z,c.a)){c.x=nx;c.v*=.94;}else if(!carHitsWall(c,c.x,nz,c.a)){c.z=nz;c.v*=.94;}
@@ -1974,9 +1977,9 @@ function renderRaceHub(){return `<div class="item"><div class="ic">🏁</div><di
   `<div class="item"><div class="ic">👥</div><div class="tx"><b>מרוץ עם חברים</b><p>כל מי שמחובר עכשיו מקבל הזמנה ומגיע לקו הזינוק</p></div><button class="pcbtn" data-frace="1" ${ghosts.size?'':'disabled'}>הזמן</button></div>`+(ghosts.size?'':`<p class="note">אין חברים מחוברים כרגע. לחץ 👥 כדי לראות איך מזמינים.</p>`);}
 let raceInvite=null;
 function joinRace(){const r=raceInvite;if(!r)return;raceInvite=null;$('invite').classList.remove('show');const s0=r.cps[0];const lp=randomLane(s0.x,s0.z,15,40,200);if(!lp)return;if(P.car){P.car.driver=null;P.car=null;}P.boat=null;P.plane=null;const c=mkCar(lp.x,lp.z,DIRA[lp.dir],'sports',pick(PAINTS)[0]);c.persist=true;c.driver='player';cars.push(c);P.car=c;P.x=c.x;P.z=c.z;startStreetRace(true,r.cps);}
-function renderFriends(){let h=renderFriendGames()+(P.codeUsed?`<p class="note">🎟️ כבר השתמשת בקוד המתנה</p>`:`<div class="item" style="display:block"><b>🎟️ קוד מתנה</b><input id="giftCode" maxlength="20" placeholder="הכנס קוד" style="width:100%;margin:8px 0;font-family:inherit;font-size:17px;font-weight:800;padding:9px;border-radius:10px;border:2px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;text-align:center;direction:ltr"><button class="pcbtn" data-giftcode="1" style="width:100%">הפעל קוד</button></div>`)+`<div class="item"><div class="ic">⚙️</div><div class="tx"><b>איכות גרפיקה</b><p>${GFX_HI?'גבוהה: צללים ועננים':'מהירה: בלי צללים (לטלפונים חלשים)'}</p></div><button class="pcbtn" data-gfx="${GFX_HI?'lo':'hi'}">${GFX_HI?'מהירה':'גבוהה'}</button></div>`+renderRtc()+`<button class="pcbtn red" data-logout="1" style="width:100%;margin:6px 0">🚪 התנתק (${(curUser||'').replace(/[<>&"]/g,'')})</button>`;if(ghosts.size){h+=`<p class="note"><b>🌐 מחוברים עכשיו:</b></p>`;for(const g of ghosts.values())h+=`<div class="item"><div class="ic">🧍</div><div class="tx"><b>${g.nick.replace(/[<>&"]/g,'')}</b><p>${g.mode==='c'?'נוהג 🚗':g.mode==='p'?'טס ✈️':g.mode==='b'?'שט 🚤':'הולך 🚶'} · ${Math.round(Math.hypot(g.x-P.x,g.z-P.z))} מ׳ ממך</p></div><button class="pcbtn" data-goto="${g.peer}">📍 סמן</button><button class="pcbtn" data-gift="${g.peer}" style="margin-inline-start:4px">🎁 $100</button></div>`;h+=`<button class="pcbtn" data-frace="1" style="width:100%">🏁 הזמן את כולם למרוץ</button>`;}
+function renderFriends(){let h=renderRoom()+renderFriendGames()+(P.codeUsed?`<p class="note">🎟️ כבר השתמשת בקוד המתנה</p>`:`<div class="item" style="display:block"><b>🎟️ קוד מתנה</b><input id="giftCode" maxlength="20" placeholder="הכנס קוד" style="width:100%;margin:8px 0;font-family:inherit;font-size:17px;font-weight:800;padding:9px;border-radius:10px;border:2px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;text-align:center;direction:ltr"><button class="pcbtn" data-giftcode="1" style="width:100%">הפעל קוד</button></div>`)+`<div class="item"><div class="ic">⚙️</div><div class="tx"><b>איכות גרפיקה</b><p>${GFX_HI?'גבוהה: צללים ועננים':'מהירה: בלי צללים (לטלפונים חלשים)'}</p></div><button class="pcbtn" data-gfx="${GFX_HI?'lo':'hi'}">${GFX_HI?'מהירה':'גבוהה'}</button></div>`+renderRtc()+`<button class="pcbtn red" data-logout="1" style="width:100%;margin:6px 0">🚪 התנתק (${(curUser||'').replace(/[<>&"]/g,'')})</button>`;if(ghosts.size){h+=`<p class="note"><b>🌐 מחוברים עכשיו:</b></p>`;for(const g of ghosts.values())h+=`<div class="item"><div class="ic">🧍</div><div class="tx"><b>${g.nick.replace(/[<>&"]/g,'')}</b><p>${g.mode==='c'?'נוהג 🚗':g.mode==='p'?'טס ✈️':g.mode==='b'?'שט 🚤':'הולך 🚶'} · ${Math.round(Math.hypot(g.x-P.x,g.z-P.z))} מ׳ ממך</p></div><button class="pcbtn" data-goto="${g.peer}">📍 סמן</button><button class="pcbtn" data-gift="${g.peer}" style="margin-inline-start:4px">🎁 $100</button></div>`;h+=`<button class="pcbtn" data-frace="1" style="width:100%">🏁 הזמן את כולם למרוץ</button>`;}
   else h+=`<p class="note">אף חבר לא מחובר עכשיו.</p>`;
-  return h+`<div class="item"><div class="ic">📨</div><div class="tx"><b>איך מזמינים חברים?</b><p>1. לחץ על כפתור השיתוף של המשחק ב-Claude ושתף עם החבר.<br>2. החבר פותח את אותו קישור כשהוא מחובר ל-Claude.<br>3. כשאתם באותו זמן במשחק, אתם רואים אחד את השני, יורים ומתחרים במרוצים.</p></div></div>`;}
+  return h+`<div class="item"><div class="ic">📨</div><div class="tx"><b>איך מזמינים חברים?</b><p>1. לחץ "🏠 פתח חדר חדש" למעלה.<br>2. שלח לחברים את הקישור או את הקוד בן 4 האותיות.<br>3. הם לוחצים על הקישור (או מקלידים את הקוד) ונכנסים לעיר שלך. עד 8 שחקנים ביחד: רואים אחד את השני, מדברים בצ'אט, יורים ומתחרים במרוצים.</p></div></div>`;}
 function extraHubClick2(t){const d=t.dataset;
   if(d.buybiz){const b=BIZDEF.find(x=>x[0]===d.buybiz);if(!b||P.money<b[3])return true;P.money-=b[3];bizOwned.push(b[0]);sfx('win');big(`קנית ${b[1]}! ${b[2]}`,`הכנסה של ${money(b[4])} כל 2 דקות`,'#f5d77a',3000);save();renderMenu();return true;}
   if(d.job){startJob(d.job);return true;}if(d.quitjob){quitJob();renderMenu();return true;}
@@ -2020,7 +2023,9 @@ function onRtcMsg(peer,m){if(!m||typeof m!=='object')return;
   else if(m.k==='fin'){toast(`🏁 ${String(m.nick||'חבר').slice(0,14)} סיים את המרוץ ב-${(+m.t||0).toFixed(1)} שנ׳`);if(!peer.host)rtcBroadcast(m,peer);}
   else if(m.k==='gift'){if(m.to==='me')gotGift(m);else if(!peer.host){const t=rtcPeers.find(p=>p.id===m.to);if(t)rtcSend(t,{k:'gift',to:'me',amt:m.amt,from:m.from});}}
   else if(m.k==='fg'){onFg(m);if(!peer.host)rtcBroadcast(m,peer);}
-  else if(m.k==='bye'){dropGhost(peer.id+':'+String(m.id));}}
+  else if(m.k==='bye'){dropGhost(peer.id+':'+String(m.id));}
+  else if(m.k==='chat'){addChat(m.n,m.t);if(!peer.host)rtcBroadcast(m,peer);}
+  else if(m.k==='full'){rm.status='❌ החדר מלא (עד 8 שחקנים)';roomRender();}}
 function showRaceInvite(cps0,host){if(!Array.isArray(cps0)||cps0.length<2||cps0.length>10)return;const cps=cps0.map(c=>({x:clamp(+c.x||0,0,WS),z:clamp(+c.z||0,0,WS)}));raceInvite={cps};$('invT').textContent=`🏁 ${String(host||'חבר').slice(0,14)} מזמין אותך למרוץ!`;$('invite').classList.add('show');setTimeout(()=>$('invite').classList.remove('show'),15000);}
 async function rtcHost(){if(!window.RTCPeerConnection){rtcUI.status='הדפדפן לא תומך במשחק משותף';renderMenu();return;}
   rtcUI={mode:'host',status:'⏳ יוצר קוד…',code:'',paste:'',peer:null};renderMenu();
@@ -2057,7 +2062,58 @@ function renderRtc(){const u=rtcUI,esc=x=>String(x).replace(/[<>&"]/g,'');let h=
   if(u.mode==='guest'){if(!u.code)h+=`<button class="btn" data-rtc="scanO" style="width:100%">📷 סרוק את קוד ההזמנה של החבר</button>`+fb(true,'join','✅ צור קוד תשובה');else h+=`<p class="note">2️⃣ עכשיו תן לחבר לסרוק את הקוד הזה. אחרי הסריקה תתחברו אוטומטית:</p><div id="rtcQR" class="qrbox" style="${qrBig?'width:320px':''}"></div><button class="pcbtn" data-rtc="qrsize" style="display:block;margin:0 auto 6px">${qrBig?'🔍 הקטן':'🔍 הגדל (אם הסריקה לא מצליחה)'}</button>`+fb(false);}
   if(u.mode)h+=`<button class="pcbtn red" data-rtc="cancel" style="width:100%;margin-top:6px">ביטול</button>`;setTimeout(drawRtcQR,0);return h+`</div>`;}
 
-function rtcClick(t){const a=t.dataset.rtc;if(!a)return false;const inp=$('rtcIn');if(inp)rtcUI.paste=inp.value;
+/* ============ rooms: short code, up to 8 players (PeerJS broker, host relays) ============ */
+const PEERLIBS=['https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js','https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js'],RPFX='irl3d-room-',RMAX=7;
+let rm={code:'',host:false,peer:null,status:'',chat:[]};
+async function loadPeer(){if(window.Peer)return;for(const u of PEERLIBS){try{await loadJs(u);if(window.Peer)return;}catch(e){}}throw 0;}
+function peerOpts(){return Object.assign({debug:0},window.__peerOpts||{});}
+const roomPeers=()=>rtcPeers.filter(p=>p.conn);
+function newRoomCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=A[Math.floor(Math.random()*A.length)];return s;}
+function roomRender(){if(menuOpen&&tab==='hub:friends')renderMenu();}
+function wrapConn(conn,host){const peer={id:(host?'h':'f')+(++rtcN),host,conn,seen:performance.now()},ch={send:s=>conn.send(s),close:()=>conn.close()};rtcPeers.push(peer);setupChannel(peer,ch);
+  const shut=()=>{if(peer.closed)return;peer.closed=true;if(rtcPeers.includes(peer)&&ch.onclose)ch.onclose();if(host&&rm.peer){toast('🚪 החדר נסגר (המארח יצא)');roomLeave(true);}};
+  conn.on('open',()=>{if(ch.onopen)ch.onopen();});
+  conn.on('data',d=>{peer.seen=performance.now();if(ch.onmessage)ch.onmessage({data:typeof d==='string'?d:JSON.stringify(d)});});
+  conn.on('close',shut);conn.on('error',shut);peer.shut=shut;return peer;}
+async function roomHost(){if(rm.peer)return;rm.status='⏳ פותח חדר…';roomRender();try{await loadPeer();}catch(e){rm.status='❌ לא הצלחתי להתחבר. בדוק אינטרנט';roomRender();return;}
+  let tries=0;const make=()=>{const code=newRoomCode(),p=new Peer(RPFX+code,peerOpts());rm.peer=p;
+    p.on('open',()=>{rm.code=code;rm.host=true;rm.status='';roomUrl(code);sfx('win');toast(`🏠 החדר נפתח! הקוד: ${code}`);roomRender();});
+    p.on('connection',conn=>{if(roomPeers().filter(x=>x.open).length>=RMAX){conn.on('open',()=>{try{conn.send(JSON.stringify({k:'full'}));}catch(e){}setTimeout(()=>conn.close(),600);});return;}wrapConn(conn,false);});
+    p.on('disconnected',()=>{if(rm.peer===p&&!p.destroyed)setTimeout(()=>{try{if(!p.destroyed)p.reconnect();}catch(e){}},2000);});
+    p.on('error',e=>{if(rm.peer!==p)return;if(e&&e.type==='unavailable-id'&&tries++<6){p.destroy();make();return;}if(!rm.code){rm.status='❌ לא הצלחתי לפתוח חדר. נסה שוב';try{p.destroy();}catch(x){}rm.peer=null;roomRender();}});};
+  make();}
+async function roomJoin(code){code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);if(code.length!==4){rm.status='❌ הקוד צריך להיות 4 תווים';roomRender();return;}
+  if(rm.peer)roomLeave(true);rm.status='⏳ מתחבר לחדר '+code+'…';roomRender();try{await loadPeer();}catch(e){rm.status='❌ לא הצלחתי להתחבר. בדוק אינטרנט';roomRender();return;}
+  const p=new Peer(peerOpts());rm.peer=p;rm.host=false;
+  const fail=msg=>{if(rm.peer!==p)return;roomLeave(true);rm.status=msg;roomRender();};
+  p.on('open',()=>{const conn=p.connect(RPFX+code,{reliable:true});const peer=wrapConn(conn,true);
+    conn.on('open',()=>{rm.code=code;rm.status='';roomUrl(code);roomRender();});
+    setTimeout(()=>{if(rm.peer===p&&!peer.open)fail('❌ לא הצלחתי להיכנס לחדר. ודא שהקוד נכון ושהמארח עדיין במשחק');},35000);});
+  p.on('error',e=>fail(e&&e.type==='peer-unavailable'?'❌ אין חדר עם הקוד '+code+'. בדוק את הקוד':'❌ בעיית חיבור. נסה שוב'));}
+function roomLeave(quiet){const p=rm.peer;rm.peer=null;for(const x of roomPeers()){x.closed=true;try{x.conn.close();}catch(e){}if(rtcPeers.includes(x)){x.open=false;dropGhost(x.id);for(const id of [...ghosts.keys()])if(id.startsWith(x.id+':'))dropGhost(id);rtcPeers.splice(rtcPeers.indexOf(x),1);}}
+  try{if(p)p.destroy();}catch(e){}rm.code='';rm.host=false;rm.status='';roomUrl('');if(!quiet)toast('🚪 יצאת מהחדר');roomRender();}
+function roomUrl(code){try{const u=new URL(location.href);if(code)u.searchParams.set('room',code);else u.searchParams.delete('room');history.replaceState(null,'',u);}catch(e){}}
+function roomLink(){try{const u=new URL(location.href);u.search='';u.hash='';u.searchParams.set('room',rm.code);return u.toString();}catch(e){return location.href;}}
+function shareRoom(){const link=roomLink(),txt=`🎮 בוא לשחק איתי ב"עיר ללא חוקים"! קוד החדר: ${rm.code}\n${link}`;if(navigator.share)navigator.share({text:txt}).catch(()=>{});else{try{navigator.clipboard.writeText(txt).then(()=>toast('📋 הקישור הועתק'),()=>{});}catch(e){}}}
+function addChat(n,t){t=String(t||'').replace(/\s+/g,' ').trim().slice(0,120);if(!t)return;n=String(n||'שחקן').slice(0,14);rm.chat.push({n,t});if(rm.chat.length>30)rm.chat.shift();chatBubble(n,t);roomRender();}
+function sendChat(){const el=$('roomChat');if(!el)return;const t=el.value.replace(/\s+/g,' ').trim().slice(0,120);if(!t)return;el.value='';rtcBroadcast({k:'chat',n:myNick||'שחקן',t});addChat((myNick||'אני')+' (אני)',t);sfx('pickup');}
+function chatBubble(n,t){const box=$('chatFeed');if(!box)return;const d=document.createElement('div');d.className='chatln';const b=document.createElement('b');b.textContent=n+': ';d.appendChild(b);d.appendChild(document.createTextNode(t));box.appendChild(d);while(box.children.length>5)box.firstChild.remove();setTimeout(()=>{d.style.opacity='0';setTimeout(()=>d.remove(),600);},9000);}
+function quickChat(){if(!roomPeers().some(p=>p.open)){toast('אתה לא בחדר עם חברים');return;}const t=prompt('💬 הודעה לכל החדר:');if(!t)return;const m=String(t).replace(/\s+/g,' ').trim().slice(0,120);if(!m)return;rtcBroadcast({k:'chat',n:myNick||'שחקן',t:m});addChat((myNick||'אני')+' (אני)',m);}
+setInterval(()=>{const now=performance.now();for(const p of roomPeers())rtcSend(p,{k:'ka'});for(const p of roomPeers())if(p.open&&now-p.seen>45000&&!document.hidden){try{p.conn.close();}catch(e){}p.shut();}const n=roomPeers().filter(p=>p.open).length,b=$('bChat');if(b)b.classList.toggle('hidden',!n);},3000);
+function renderRoom(){const esc=x=>String(x).replace(/[<>&"]/g,''),n=roomPeers().filter(p=>p.open).length;let h=`<div class="item" style="display:block"><b>🏠 חדר משחק עם חברים (עד 8 שחקנים)</b>`;
+  if(!rm.code){h+=`<p class="note" style="text-align:right">אחד פותח חדר ומקבל קוד של 4 אותיות. כל השאר מקלידים את הקוד ונכנסים, מכל מקום.</p><button class="btn" data-mroom="host" style="width:100%;margin-bottom:8px">🏠 פתח חדר חדש</button><div style="display:flex;gap:8px"><input id="roomIn" maxlength="4" placeholder="קוד" autocomplete="off" style="flex:1;min-width:0;font-family:inherit;font-size:22px;font-weight:800;letter-spacing:6px;padding:8px;border-radius:10px;border:2px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;text-align:center;direction:ltr;text-transform:uppercase"><button class="pcbtn" data-mroom="join" style="flex:1">🚪 הצטרף</button></div>`;}
+  else{h+=`<p class="note">${rm.host?'אתה המארח של החדר':'אתה בחדר'}. הקוד:</p><div style="font-size:40px;font-weight:900;letter-spacing:10px;text-align:center;direction:ltr;color:#ffd84a;margin:4px 0">${esc(rm.code)}</div><p class="note">👥 ${n+1} ${n?'שחקנים בחדר':'(רק אתה כרגע. שלח לחברים את הקוד)'}</p>
+    <div style="display:flex;gap:8px;margin-bottom:8px"><button class="pcbtn" data-mroom="share" style="flex:1">📤 שלח קישור לחברים</button><button class="pcbtn red" data-mroom="leave" style="flex:1">🚪 צא מהחדר</button></div>`;
+    if(rm.host)h+=`<p class="note" style="font-size:12px">⚠️ אם תצא מהמשחק, החדר ייסגר לכולם.</p>`;
+    h+=`<div style="background:rgba(0,0,0,.3);border-radius:10px;padding:8px;max-height:150px;overflow:auto;text-align:right;font-size:14px">${rm.chat.length?rm.chat.slice(-12).map(c=>`<div><b style="color:#6dff9e">${esc(c.n)}:</b> ${esc(c.t)}</div>`).join(''):'<span style="opacity:.6">אין הודעות עדיין</span>'}</div>
+    <div style="display:flex;gap:8px;margin-top:6px"><input id="roomChat" maxlength="120" placeholder="כתוב הודעה…" style="flex:3;min-width:0;font-family:inherit;font-size:16px;padding:8px;border-radius:10px;border:2px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff"><button class="pcbtn" data-mroom="chat" style="flex:1">💬 שלח</button></div>`;}
+  if(rm.status)h+=`<p class="note"><b>${esc(rm.status)}</b></p>`;return h+`</div>`;}
+function roomClick(t){const a=t.dataset.mroom;if(!a)return false;
+  if(a==='host')roomHost();else if(a==='join')roomJoin(($('roomIn')||{}).value);else if(a==='leave')roomLeave();else if(a==='share')shareRoom();else if(a==='chat')sendChat();return true;}
+addEventListener('keydown',e=>{if(e.key!=='Enter'||!e.target)return;if(e.target.id==='roomChat')sendChat();else if(e.target.id==='roomIn')roomJoin(e.target.value);});
+addEventListener('beforeunload',()=>{if(rm.peer)try{rm.peer.destroy();}catch(e){}});
+function roomFromUrl(){let c='';try{c=new URL(location.href).searchParams.get('room')||'';}catch(e){}c=c.toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length===4&&!rm.peer){toast('🚪 נכנס לחדר '+c+'…');roomJoin(c);}}
+function rtcClick(t){const a=t.dataset.rtc;if(!a)return roomClick(t);const inp=$('rtcIn');if(inp)rtcUI.paste=inp.value;
   if(a==='host')rtcHost();else if(a==='guest'){rtcUI={mode:'guest',status:'סרוק את הקוד שמופיע על המסך של החבר',code:'',paste:'',peer:null};renderMenu();}
   else if(a==='qrsize'){qrBig=!qrBig;renderMenu();}
   else if(a==='scanA')startScan(t=>{rtcUI.paste=t;rtcHostAccept();});else if(a==='scanO')startScan(t=>{rtcUI.paste=t;rtcUI.status='⏳ יוצר קוד תשובה…';renderMenu();rtcGuest();});
@@ -2504,6 +2560,51 @@ function lightStop(c,d,inI){const L0=8*T,ax=d[0]!==0?0:1,pos=ax===0?c.x:c.z,dir=
   if(dir>0){e=Math.ceil(pos/L0)*L0;dist=e-pos;}else{e=Math.floor(pos/L0)*L0+2*T;if(e>pos)e-=L0;dist=pos-e;}
   if(inI||dist<=0||dist>c.w/2+14)return 99;const idx=Math.round((e-(dir>0?0:2*T))/L0),other=Math.floor((ax===0?c.z:c.x)/L0);const m=ax===0?idx:other,k=ax===0?other:idx;
   if(m<0||m>BL||k<0||k>BL||lightGreen(m,k,ax))return 99;return Math.max(0,(dist-c.w/2-1.5)*1.3);}
+/* ============ realism pack: drift, skid marks, damage smoke, headlights, wet roads, lightning, engine & city sound ============ */
+const SKN=500,skidMesh=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,.32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0x111111,transparent:true,opacity:.55,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}),SKN);
+skidMesh.frustumCulled=false;skidMesh.renderOrder=1;{const m0=new THREE.Matrix4().makeScale(0,0,0);for(let i=0;i<SKN;i++)skidMesh.setMatrixAt(i,m0);}scene.add(skidMesh);
+let skI=0,skPrev=null;const skM=new THREE.Matrix4(),skQ=new THREE.Quaternion(),skS=new THREE.Vector3(),skP=new THREE.Vector3(),skUp=new THREE.Vector3(0,1,0);
+function skidSeg(x0,z0,x1,z1,y){const L=Math.hypot(x1-x0,z1-z0);if(L<.05||L>3)return;skQ.setFromAxisAngle(skUp,-Math.atan2(z1-z0,x1-x0));skP.set((x0+x1)/2,y+.03,(z0+z1)/2);skS.set(L,1,1);skM.compose(skP,skQ,skS);skidMesh.setMatrixAt(skI++%SKN,skM);skidMesh.instanceMatrix.needsUpdate=true;}
+function wheelPts(c){const ca=Math.cos(c.a),sa=Math.sin(c.a),bx=c.x-ca*c.w*.32,bz=c.z-sa*c.w*.32,hw=Math.max(.5,c.h*.4);return [[bx-sa*hw,bz+ca*hw],[bx+sa*hw,bz-ca*hw]];}
+// player headlights (one spot light, only at night)
+const headL=new THREE.SpotLight(0xfff1d0,0,55,.5,.55,1.2);headL.castShadow=false;scene.add(headL);scene.add(headL.target);
+// sound bits (lazy, once audio is unlocked)
+let screech=null,amb=null,engT=0,gear=1,shiftT=0,flashT=0,thunderQ=[],hornT=12;
+function realAudio(){if(!AC||screech)return;try{
+  const b=AC.createBufferSource();b.buffer=noiseBuf;b.loop=true;const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=2600;f.Q.value=7;const g=AC.createGain();g.gain.value=0;b.connect(f);f.connect(g);g.connect(AC.destination);b.start();screech={g,f};
+  const b2=AC.createBufferSource();b2.buffer=noiseBuf;b2.loop=true;const f2=AC.createBiquadFilter();f2.type='lowpass';f2.frequency.value=320;const g2=AC.createGain();g2.gain.value=0;b2.connect(f2);f2.connect(g2);g2.connect(AC.destination);b2.start();amb={g:g2};
+  if(eng){const o2=AC.createOscillator();o2.type='square';const lf=AC.createBiquadFilter();lf.type='lowpass';lf.frequency.value=260;const g3=AC.createGain();g3.gain.value=.55;o2.connect(lf);lf.connect(g3);g3.connect(eng.g);o2.start();eng.o2=o2;}}catch(e){}}
+function thunder(vol){if(!AC)return;try{const now=AC.currentTime,s=AC.createBufferSource();s.buffer=noiseBuf;const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(900,now);f.frequency.exponentialRampToValueAtTime(90,now+1.3);const g=AC.createGain();g.gain.setValueAtTime(.001,now);g.gain.exponentialRampToValueAtTime(.5*vol,now+.08);g.gain.exponentialRampToValueAtTime(.001,now+1.4);s.connect(f);f.connect(g);g.connect(AC.destination);s.start(now);s.stop(now+1.45);}catch(e){}}
+// engine pitch with gears: rpm climbs inside each gear, drops on shift
+function engFreq(c){const v=Math.abs(c.v),top=Math.max(20,c.max||30),edges=[0,.18,.36,.56,.78,1.01];let g=1;while(g<5&&v>edges[g]*top)g++;if(g!==gear){if(g>gear)shiftT=.12;gear=g;}
+  const lo=edges[g-1]*top,hi=edges[g]*top,rpm=clamp((v-lo)/Math.max(1,hi-lo),0,1);shiftT=Math.max(0,shiftT-1/60);return 42+rpm*(70+g*6)+(g-1)*14-(shiftT>0?25:0);}
+let groundM=null,groundBase=null;
+function updReal(dt){realAudio();const c=P.car,now=AC?AC.currentTime:0;
+  // --- player car: tyre slip, skid marks, smoke, splashes
+  let slip=0;if(c&&!c.air&&!isBike(c)&&!MODELS[CT[c.type].model].animal){slip=Math.abs(c.slip||0);const spd=Math.abs(c.v),braking=(keys.KeyS||keys.ArrowDown)&&c.v>14;
+    const skid=spd>6&&(slip>.13||(braking&&spd>14)||((keys.Space||jumpHeld)&&spd>9));const w=wheelPts(c),y=groundY(c.x,c.z);
+    if(skid&&skPrev){skidSeg(skPrev[0][0],skPrev[0][1],w[0][0],w[0][1],y);skidSeg(skPrev[1][0],skPrev[1][1],w[1][0],w[1][1],y);}skPrev=skid?w:null;
+    if(skid&&R()<.6)for(const p of w)part(false,p[0],.25,p[1],rr(-.6,.6),rr(.4,1.2),rr(-.6,.6),1.1,.45,0xcccccc,3);
+    if(rainK>.4&&spd>8&&R()<rainK*.8)for(const p of w)part(false,p[0],.15,p[1],rr(-1.5,1.5)-Math.cos(c.a)*2,rr(1,2.5),rr(-1.5,1.5)-Math.sin(c.a)*2,.35,.12,0xb8c8d8,0,9);
+    if(spd>c.max*.8)cam.shake=Math.max(cam.shake,.025);}else skPrev=null;
+  if(screech)screech.g.gain.setTargetAtTime(c&&skPrev&&!menuOpen&&!P.dead?clamp(.05+slip*.25,0,.16):0,now,.05);
+  // --- damaged cars smoke from the hood (black when almost wrecked)
+  const pp=me();for(const k of cars){if(k.dead||!k.maxhp||MODELS[CT[k.type].model].animal||k.hp>k.maxhp*.5||D2(k.x,k.z,pp.x,pp.z)>3600||R()>.35)continue;const bad=k.hp<k.maxhp*.25;part(false,k.x+Math.cos(k.a)*k.w*.38,(k.y||0)+1,k.z+Math.sin(k.a)*k.w*.38,rr(-.3,.3),rr(1,2),rr(-.3,.3),bad?1.6:1.2,bad?.6:.45,bad?0x2a2a2a:0x8a8a8a,2.5);}
+  // --- body roll in turns, dive under braking, squat when accelerating
+  for(const k of cars){if(isBike(k)||k.air||k.ramp||!k.g.visible)continue;const yr=angDiff(k.a,k.ra==null?k.a:k.ra)/Math.max(dt,.001),acc=(k.v-(k.rv==null?k.v:k.rv))/Math.max(dt,.001);k.ra=k.a;k.rv=k.v;
+    k.rl=(k.rl||0)+(clamp(-yr*Math.abs(k.v)*.0035,-.07,.07)-(k.rl||0))*Math.min(1,dt*6);k.pt=(k.pt||0)+(clamp(-acc*.0035,-.05,.05)-(k.pt||0))*Math.min(1,dt*6);
+    }
+  // --- headlight beam at night
+  if(c&&nightK>.15&&!isBike(c)){const ca=Math.cos(c.a),sa=Math.sin(c.a),y=groundY(c.x,c.z);headL.intensity=2.2*nightK*(GFX_HI?1:.8);headL.position.set(c.x+ca*c.w*.5,y+1,c.z+sa*c.w*.5);headL.target.position.set(c.x+ca*22,y,c.z+sa*22);}else headL.intensity=0;
+  // --- wet, darker asphalt in rain
+  if(!groundM){const g=scene.children.find(o=>o.isMesh&&o.material&&o.material.map===asphaltTex);if(g){groundM=g.material;groundBase=groundM.color.clone();}}if(groundM)groundM.color.copy(groundBase).multiplyScalar(1-.38*rainK);
+  // --- lightning + thunder in storms
+  if(raining&&rainK>.7&&!EV.winter&&R()<dt*.07){flashT=.18;thunderQ.push(time+rr(.6,2.5));}
+  if(flashT>0){flashT-=dt;const f=flashT>.1||flashT<.04?1:0;hemi.intensity+=f*1.6;scene.background.offsetHSL(0,0,f*.25);}
+  while(thunderQ.length&&time>=thunderQ[0]){thunderQ.shift();thunder(rr(.6,1));cam.shake=Math.max(cam.shake,.06);}
+  // --- city hum + distant horns
+  const city=inCity(pp.x,pp.z)&&!menuOpen;if(amb)amb.g.gain.setTargetAtTime(city?.035+.02*dayK:0,now,.5);
+  if(city&&started){hornT-=dt;if(hornT<=0){hornT=rr(10,28);sfx('horn',rr(.06,.12));}}}
 /* ============ accidents & arguments ============ */
 function crashFight(a,b,imp){const pl=a===P.car||b===P.car;
   if(pl){const o=a===P.car?b:a;if(o.driver==='ai'&&imp>10&&R()<.6){const q=ejectDriver(o,false,false);q.state='fight';q.fightT=15;say(q,'fight',true);}}
@@ -3372,7 +3473,7 @@ function setGfx(hi,quiet){GFX_HI=hi;try{localStorage.setItem('ir-gfx',hi?'high':
 
 function syncModels(){
   const pp=me(),vis=isTouch?150:185;
-  for(const c of cars){const far=D2(c.x,c.z,pp.x,pp.z)>vis*vis;c.g.visible=!far;if(far)continue;c.y+=(groundY(c.x,c.z)-c.y)*.3;c.g.position.set(c.x,c.y+(c.alt||0),c.z);if(isBike(c)){c.lean=(c.lean||0)+(clamp(angDiff(c.a,c.pa==null?c.a:c.pa)*60*.12,-.55,.55)-(c.lean||0))*.2;c.pa=c.a;const wh=c===P.car&&(jumpHeld||keys.Space)&&c.v>3?.32:0;c.whl=(c.whl||0)+(wh-(c.whl||0))*.15;c.g.rotation.set(c.lean,-c.a,c.whl,'YXZ');c.g.position.y+=c.whl*.7;if(MODELS[CT[c.type].model].animal)c.g.position.y+=Math.abs(Math.sin(time*9+c.id))*Math.min(.22,Math.abs(c.v)*.03);if(c.type==='robot')c.g.position.y+=Math.abs(Math.sin(time*4))*.35*Math.min(1,Math.abs(c.v)/4);if(c.ty){c.g.position.y+=c.ty;c.g.rotation.x=time*5;}}else c.g.rotation.set(0,-c.a,c.air?clamp(c.vy*.035,-.4,.3):c.ramp?.21:0);
+  for(const c of cars){const far=D2(c.x,c.z,pp.x,pp.z)>vis*vis;c.g.visible=!far;if(far)continue;c.y+=(groundY(c.x,c.z)-c.y)*.3;c.g.position.set(c.x,c.y+(c.alt||0),c.z);if(isBike(c)){c.lean=(c.lean||0)+(clamp(angDiff(c.a,c.pa==null?c.a:c.pa)*60*.12,-.55,.55)-(c.lean||0))*.2;c.pa=c.a;const wh=c===P.car&&(jumpHeld||keys.Space)&&c.v>3?.32:0;c.whl=(c.whl||0)+(wh-(c.whl||0))*.15;c.g.rotation.set(c.lean,-c.a,c.whl,'YXZ');c.g.position.y+=c.whl*.7;if(MODELS[CT[c.type].model].animal)c.g.position.y+=Math.abs(Math.sin(time*9+c.id))*Math.min(.22,Math.abs(c.v)*.03);if(c.type==='robot')c.g.position.y+=Math.abs(Math.sin(time*4))*.35*Math.min(1,Math.abs(c.v)/4);if(c.ty){c.g.position.y+=c.ty;c.g.rotation.x=time*5;}}else c.g.rotation.set(c.air||c.ramp?0:c.rl||0,-c.a,c.air?clamp(c.vy*.035,-.4,.3):c.ramp?.21:c.pt||0,'YXZ');
     c.mat.envMapIntensity=(c.lux?1.1:.8)*(.3+.7*dayK);if(c.drv)c.drv.visible=!!c.driver&&!c.dead&&!(c===P.car&&isBike(c));if(c.neonM)c.neonM.material.opacity=.3+.5*nightK;
     if(c.lbW){const f=c.siren&&Math.floor(time*8)%2;c.lbR.color.setHex(c.siren?(f?0xff2a3a:0x551018):0x661020);c.lbB.color.setHex(c.siren?(f?0x444444:0xffffff):0x999999);}else if(c.lbR){const f=c.siren&&Math.floor(time*8)%2;c.lbR.color.setHex(c.siren?(f?0xff2a4a:0x551018):0x661020);c.lbB.color.setHex(c.siren?(f?0x102070:0x3a8cff):0x102060);}
     if(!c.dead){const k=clamp(c.hp/c.maxhp,0,1);c.mat.color.setHex(c.col).multiplyScalar(.45+.55*k);}}
@@ -3505,6 +3606,7 @@ $('buildBar').addEventListener('pointerdown',e=>e.stopPropagation());$('buildBar
 $('bCode').addEventListener('click',e=>{e.stopPropagation();if(started&&!menuOpen)openMenu(hubInfo('code'),'hub:code');});
 $('bPhoto').addEventListener('click',e=>{e.stopPropagation();if(started)togglePhoto();});
 $('qrScan').addEventListener('pointerdown',e=>e.stopPropagation());$('qrScan').addEventListener('click',e=>e.stopPropagation());$('qrCancel').addEventListener('click',()=>{stopScan();scanCb=null;});$('qrFile').addEventListener('change',e=>{scanPhoto(e.target.files&&e.target.files[0]);e.target.value='';});
+$('bChat').addEventListener('click',e=>{e.stopPropagation();quickChat();});$('play').addEventListener('click',()=>setTimeout(()=>{if(started)roomFromUrl();},1500));
 $('bFriends').addEventListener('click',e=>{e.stopPropagation();if(started&&!menuOpen)openMenu(hubInfo('friends'),'hub:friends');});
 $('invY').addEventListener('click',e=>{e.stopPropagation();if(pendingFg){acceptFg();return;}if(!P.dead&&!cine)joinRace();});$('invN').addEventListener('click',e=>{e.stopPropagation();raceInvite=null;pendingFg=null;$('invite').classList.remove('show');});
 for(const id of ['bMap','bFS','bFriends','bPhoto','bCode','bPow','bBuild','invY','invN'])$(id).addEventListener('pointerdown',e=>e.stopPropagation());
@@ -3549,7 +3651,7 @@ function update(dt){
   updAmbPerks(dt);updFireworks(dt);updAnimals(dt);updWorlds2(dt);updRomania(dt);updEmergency(dt);updBirds(dt);updRush();if(plotOwned)updRides(dt);updFg(dt);updEvents(dt);updSuper(dt);if(EV.winter&&inCity(P.x,P.z)&&!raining)raining=true;updArmy(dt);updSupers(dt);if(P.car&&P.car.type==='tank')unlock('tanker');updCountries(dt);updSpecial(dt);updBox(dt);updPirates(dt);updSky(dt);if(P.car&&MODELS[CT[P.car.type].model].animal)unlock('rider');updLights(dt);updRedCam(dt);if(P.buffSpeed>0)P.buffSpeed-=dt;if(P.buffStr>0)P.buffStr-=dt;updJail(dt);updBump(dt);updRooms(dt);updHunger(dt);updBiz(dt);updJob(dt);updFires(dt);updPet(dt);updTrain(dt);updBall(dt);updWorlds(dt);updPilotless(dt);
   if(decor.includes('tramp')&&onFoot()&&!P.para&&P.y<=.01&&D2(P.x,P.z,HX+17.5,HZ+18.3)<2.4)P.vy=9.5;
   if(P.car&&!P.dead&&started){const d=D(TUNEHUB,P.car);if(TUNEHUB.cool){if(d>8)TUNEHUB.cool=false;}else if(d<5&&Math.abs(P.car.v)<3){TUNEHUB.cool=true;openMenu(hubInfo('tune'),'hub:tune');}}
-  if(started){if(stars()>=5)unlock('wanted5');if(P.money>=100000)unlock('rich');}hurtT=Math.max(0,hurtT-dt);updDayNight();updRain(dt);updZone();sendPresence(dt);updGhosts(dt);updChairs(dt);
+  if(started){if(stars()>=5)unlock('wanted5');if(P.money>=100000)unlock('rich');}hurtT=Math.max(0,hurtT-dt);updDayNight();updRain(dt);updZone();sendPresence(dt);updGhosts(dt);updChairs(dt);updReal(dt);
 }
 let last=performance.now();
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!menuOpen)update(dt);syncModels();updFun(dt);if(cine)cineTick(dt);else if(dealerOpen)dealerCam(dt);else updCamera(dt);updBubbles(dt);renderer.render(scene,camera);drawMinimap();if(mapOpen)drawBigMap();updHUD();updAudio();requestAnimationFrame(loop);}
