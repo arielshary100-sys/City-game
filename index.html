@@ -2690,8 +2690,8 @@ function pedStates(p,dt){const s=p.state;
   if(s==='follow'){const pp=me(),d=Math.hypot(pp.x-p.x,pp.z-p.z);if(d>2.2)walkTo(p,pp.x,pp.z,Math.min(4.8,(d-1.5)*2.2),dt);else p.a=lerpA(p.a,Math.atan2(pp.z-p.z,pp.x-p.x),dt*4);return true;}
   return false;}
 // --- story: missions come in a fixed order; you can skip one
-const STORY=['delivery','taxi','thief','pizza','race','lostkid','medic','school','drunk','steal','vip','escape','killer','stunt','gang','chase','collector','landing','boatrace','rings','spy','bank','zombie','trainheist','aliens','casinoheist','treasure'];
-function storyList(){const ids=MISSIONS.map(m=>m.id),L=STORY.filter(i=>ids.includes(i));for(const i of ids)if(!L.includes(i))L.push(i);return L;}
+const STORY=['delivery','taxi','thief','pizza','race','lostkid','medic','school','drunk','steal','vip','escape','killer','stunt','gang','chase','collector','landing','boatrace','rings','spy','bank','trainheist','aliens','casinoheist','treasure'];
+function storyList(){const ids=MISSIONS.map(m=>m.id).filter(i=>i!=='zombie'),L=STORY.filter(i=>ids.includes(i));for(const i of ids)if(!L.includes(i))L.push(i);return L;}
 function storyCur(){return storyList()[stats.story||0]||null;}
 function storyNext(){stats.story=(stats.story||0)+1;save();const n=storyCur(),m=MISSIONS.find(x=>x.id===n);if(m)setTimeout(()=>toast(`📖 המשימה הבאה: ${m.icon} ${m.title} (במחשב הכחול)`),3200);}
 function storyDone(id){if(id&&id===storyCur())storyNext();}
@@ -3330,11 +3330,10 @@ function buildEvent(k){if(evObjs[k])return;const g=new THREE.Group();scene.add(g
     evObjs.jets=[0,1,2].map(i=>{const G=planeGeo('jet',0xf4f4f4),m=new THREE.Group();m.add(new THREE.Mesh(G.body,vcMat));scene.add(m);return m;});}}
 function setEvent(k,on){EV[k]=on;if(on)buildEvent(k);if(evObjs[k])evObjs[k].visible=on;if(k==='indep'&&evObjs.jets)evObjs.jets.forEach(j=>j.visible=on);if(k==='winter'&&evObjs.santa)evObjs.santa.h.g.visible=on;}
 function renderEvents(){const row=(k,n,d)=>`<div class="item"><div class="ic">${n.split(' ')[0]}</div><div class="tx"><b>${n}</b><p>${d}</p></div><button class="pcbtn" data-ev="${k}">${EV[k]?'כבה':'הפעל'}</button></div>`;
-  return row('halloween','🎃 ליל כל הקדושים','דלעות זוהרות, עטלפים וזומבים בלילה')+row('winter','🎄 חורף','שלג בעיר, עץ מקושט, אורות וסבא עם מתנות')+row('indep','🇮🇱 יום העצמאות','דגלים, זיקוקים כל לילה ומטס מעל העיר')+`<div class="item"><div class="ic">🌪️</div><div class="tx"><b>טורנדו!</b><p>עף דרך העיר ומעיף מכוניות. תברח!</p></div><button class="pcbtn red" data-tornado="1" ${tornado?'disabled':''}>שחרר</button></div>`;}
+  return row('halloween','🎃 ליל כל הקדושים','דלעות זוהרות ועטלפים בלילה')+row('winter','🎄 חורף','שלג בעיר, עץ מקושט, אורות וסבא עם מתנות')+row('indep','🇮🇱 יום העצמאות','דגלים, זיקוקים כל לילה ומטס מעל העיר')+`<div class="item"><div class="ic">🌪️</div><div class="tx"><b>טורנדו!</b><p>עף דרך העיר ומעיף מכוניות. תברח!</p></div><button class="pcbtn red" data-tornado="1" ${tornado?'disabled':''}>שחרר</button></div>`;}
 function startTornado(){closeMenu();const a=R()*6,c=WS/2;const tg=new THREE.Group();for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.CylinderGeometry(4+i*5,2+i*4,14,16,1,true),new THREE.MeshBasicMaterial({color:0x6a6a70,transparent:true,opacity:.28,side:THREE.DoubleSide,depthWrite:false}));m.position.y=7+i*13;tg.add(m);}scene.add(tg);
   tornado={g:tg,x:c+Math.cos(a)*350,z:c+Math.sin(a)*350,tx:c-Math.cos(a)*350,tz:c-Math.sin(a)*350,t:70};big('🌪️ טורנדו!','תתרחק ממנו!','#ff3d7f',3000);sfx('fail');}
 function updEvents(dt){const night=nightK>.5;
-  if(EV.halloween&&night&&inCity(P.x,P.z)&&R()<dt*.25&&zombies.length<4){const q=randomWalk(P.x,P.z,30,60,40);if(q)mkZombie(q.x,q.z);}
   if(EV.halloween&&R()<dt*.15)for(const p of peds)if(p.kind==='civ'&&p.state==='walk'&&D2(p.x,p.z,P.x,P.z)<100){showBubble(p,pick(['ממתק או תעלול! 🎃','בווווו! 👻','ראית את הזומבי? 🧟']),null,null,3);break;}
   if(EV.winter&&evObjs.santa&&D2(evObjs.santa.x,evObjs.santa.z,P.x,P.z)<9&&!evObjs.santaGave){evObjs.santaGave=true;P.money+=1000;showBubble(evObjs.santa,'הו הו הו! 🎁 חג שמח!',null,null,4);big('🎁 מתנה מסבא!','+$1,000','#6dff9e',2500);}
   if(EV.indep){if(night)fwT-=dt*2;if(evObjs.jets&&!night){const c=WS/2,t=time*.25;evObjs.jets.forEach((j,i)=>{const a=t+i*.08,r=300;j.position.set(c+Math.cos(a)*r+i*6,160+i*4,c+Math.sin(a)*r);j.rotation.y=-a-Math.PI/2;j.visible=true;part(false,j.position.x,j.position.y,j.position.z,0,0,0,3,2.5,[0x1d4ed8,0xffffff,0x1d4ed8][i],0,0);});}else if(evObjs.jets)evObjs.jets.forEach(j=>j.visible=false);}
