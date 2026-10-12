@@ -60,6 +60,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ink);color:var(-
 #missionBox small{display:block;color:var(--sun);font-size:12px;font-weight:700}
 @media (max-width:520px){#missionBox{top:calc(env(safe-area-inset-top,0px) + 196px);max-width:80vw}}
 #bHands{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:6;background:#d62839;color:#fff;border:3px solid #fff;border-radius:22px;padding:10px 22px;font-family:inherit;font-size:34px;font-weight:900;display:flex;flex-direction:column;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.5);animation:pulseH 1s infinite}#bHands small{font-size:15px}#bHands.hidden{display:none}@keyframes pulseH{50%{transform:translateX(-50%) scale(1.07)}}
+#paper{position:fixed;inset:0;z-index:9;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}#paper.show{display:flex}#paper .pp{background:#f4ecd8;color:#1a1a1a;width:min(92vw,460px);max-height:88vh;overflow:auto;border-radius:6px;padding:16px 18px;box-shadow:0 10px 40px rgba(0,0,0,.6);font-family:Georgia,'Assistant',serif;direction:rtl;text-align:right}#paper .pphead{font-family:'Secular One',Assistant,sans-serif;font-size:30px;border-bottom:3px double #1a1a1a;padding-bottom:6px;display:flex;justify-content:space-between;align-items:flex-end}#paper .pphead small{font-size:13px}#paper h2{font-size:26px;margin:12px 0 4px;line-height:1.15}#paper .ppsub{margin:0 0 10px;font-size:15px;color:#333}#paper .ppbox{border:1px solid #888;padding:8px;margin:8px 0;font-size:14px;background:rgba(255,255,255,.4)}#paper .ppsmall{font-size:13px;color:#444;border-top:1px solid #999;padding-top:6px}
 #subt{position:fixed;left:50%;top:84px;transform:translateX(-50%);max-width:min(92vw,640px);background:rgba(0,0,0,.72);color:#fff;padding:9px 16px;border-radius:12px;font-size:17px;font-weight:700;z-index:7;pointer-events:none;opacity:0;transition:opacity .3s;text-align:center;direction:rtl}#subt.show{opacity:1}#subt b{color:#ffd84a}
 #chatFeed{position:fixed;left:10px;bottom:150px;z-index:6;pointer-events:none;max-width:min(70vw,360px);display:flex;flex-direction:column;gap:4px}.chatln{background:rgba(0,0,0,.55);color:#fff;padding:5px 10px;border-radius:10px;font-size:14px;transition:opacity .5s;direction:rtl}.chatln b{color:#6dff9e}
 #toast{position:fixed;left:50%;top:32%;transform:translateX(-50%);background:var(--panel);padding:9px 18px;border-radius:12px;font-weight:800;font-size:16px;z-index:7;pointer-events:none;opacity:0;transition:opacity .25s;text-align:center;max-width:86vw}
@@ -373,13 +374,16 @@ const ZN=[Z_AIR,Z_PORT,...PIERS,Z_USA,Z_USPIER,Z_LIB,Z_SKI];
 function zoneAt(x,z){for(const q of ZN){if(q.r!=null){if(D2(x,z,q.cx,q.cz)<q.r*q.r)return q;}else if(x>=q.x0&&x<q.x1&&z>=q.z0&&z<q.z1)return q;}return null;}
 function zoneHit(q,x,z){for(const s of q.solids){if(s.r!=null){if(D2(x,z,s.x,s.z)<s.r*s.r)return s;}else if(x>=s.x0&&x<s.x1&&z>=s.z0&&z<s.z1)return s;}return null;}
 function inCity(x,z){return x>=0&&z>=0&&x<WS&&z<WS;}
-function isLand(x,z){return inCity(x,z)||!!zoneAt(x,z);}
+function isLand(x,z){return inCity(x,z)||(!!zoneAt(x,z)&&!inLake(x,z));}
 /* ============ the hills: big rolling countryside west of the city ============ */
 const HX0=-900,HX1=-.01,HZ0=-420,HZ1=353,Z_HILL={id:'hills',col:'#5f9a48',x0:HX0,x1:HX1,z0:HZ0,z1:HZ1,solids:[{x0:-1.4,x1:HX1,z0:0,z1:199.5,h:1.2},{x0:-1.4,x1:HX1,z0:210.5,z1:HZ1,h:1.2}]};ZN.push(Z_HILL);
 const sstep=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);};
-function hillH(x,z){const e=sstep(0,140,-x)*sstep(0,70,x-HX0)*sstep(0,70,z-HZ0)*sstep(0,70,HZ1-z);if(e<=0)return 0;
+function hillH(x,z){const h=hillH0(x,z),ld=Math.hypot(x-LKX,z-LKZ);if(ld>LKR+30)return h;const k=sstep(LKR+30,LKR-8,ld);return h*(1-k)-3*k;}
+function hillH0(x,z){const e=sstep(0,140,-x)*sstep(0,70,x-HX0)*sstep(0,70,z-HZ0)*sstep(0,70,HZ1-z);if(e<=0)return 0;
   return e*(9+11*Math.sin(x*.017+1)*Math.cos(z*.015)+6*Math.sin(x*.038+z*.029)+3*Math.cos(z*.052-x*.021)+2.5*Math.sin(x*.07)*Math.sin(z*.061));}
 function inHills(x,z){return x>=HX0&&x<HX1&&z>=HZ0&&z<HZ1;}
+const LKX=-380,LKZ=-90,LKR=60;Z_HILL.solids.push({x:LKX,z:LKZ,r:LKR-3,h:.01});
+function inLake(x,z){return x<0&&D2(x,z,LKX,LKZ)<(LKR-3)*(LKR-3);}
 // winding road: loop through the hills, joined to the city at the west gap
 const HROAD=[];{const cx=-450,cz=-40;for(let i=0;i<=360;i++){const a=i/360*Math.PI*2,r=1+.13*Math.sin(a*3)+.07*Math.cos(a*5);HROAD.push({x:cx+Math.cos(a)*330*r,z:cz+Math.sin(a)*300*r});}
 }
@@ -398,7 +402,8 @@ function buildHills(){
   {const dash=[];for(let i=0;i<HROAD.length-1;i+=2){const p=HROAD[i],q=HROAD[i+1];dash.push({x:(p.x+q.x)/2,y:hillH((p.x+q.x)/2,(p.z+q.z)/2)+.13,z:(p.z+q.z)/2,ry:-Math.atan2(q.z-p.z,q.x-p.x)});}
     const dm=new THREE.InstancedMesh(new THREE.BoxGeometry(2.2,.02,.18),basic(0xf2e6a0),dash.length),o=new THREE.Object3D();dash.forEach((d,i)=>{o.position.set(d.x,d.y,d.z);o.rotation.set(0,d.ry,0);o.updateMatrix();dm.setMatrixAt(i,o.matrix);});scene.add(dm);}
   // trees, rocks and a few farm houses (all solid)
-  const trees=[],rocks=[];for(let i=0;i<(isTouch?260:420);i++){const x=rr(HX0+40,-60),z=rr(HZ0+40,HZ1-40);if(nearRoad(x,z,10))continue;(R()<.85?trees:rocks).push({x,z,s:rr(.8,1.6)});}
+  const trees=[],rocks=[];for(let i=0;i<(isTouch?260:420);i++){const x=rr(HX0+40,-60),z=rr(HZ0+40,HZ1-40);if(nearRoad(x,z,10)||D2(x,z,LKX,LKZ)<(LKR+12)**2)continue;(R()<.85?trees:rocks).push({x,z,s:rr(.8,1.6)});}
+  for(let i=0;i<(isTouch?120:220);i++){const a=R()*6.283,r=rr(LKR+14,LKR+75),x=LKX+Math.cos(a)*r,z=LKZ+Math.sin(a)*r;if(!nearRoad(x,z,10)&&Math.abs(a)>.35)trees.push({x,z,s:rr(.9,1.7)});}
   const tm=new THREE.InstancedMesh(new THREE.ConeGeometry(2.2,6,7).translate(0,4.5,0),mat(0x2f6b2a),trees.length),tt=new THREE.InstancedMesh(new THREE.CylinderGeometry(.25,.35,2,6).translate(0,1,0),mat(0x6a4a2a),trees.length),o=new THREE.Object3D();
   trees.forEach((t,i)=>{o.position.set(t.x,hillH(t.x,t.z)-.1,t.z);o.rotation.set(0,t.x,0);o.scale.setScalar(t.s);o.updateMatrix();tm.setMatrixAt(i,o.matrix);tt.setMatrixAt(i,o.matrix);Z_HILL.solids.push({x:t.x,z:t.z,r:.5*t.s,h:hillH(t.x,t.z)+7*t.s});});
   tm.castShadow=tt.castShadow=true;scene.add(tm,tt);
@@ -1204,6 +1209,7 @@ function hurtPed(p,dmg,byP,dirA){
   else if(byP&&p.kind!=='civ'){if(p.state!=='hostile')say(p,p.kind==='cop'?'cop':'gang');p.state='hostile';if(p.kind==='cop')addHeat(1);}
 }
 function killPed(p,byP,dirA,speed){
+  if(byP&&DL&&p.state!=='dead')DL.kills++;
   if(p.state!=='dead'&&R()<.3)setTimeout(()=>dispatchAmbulance({x:p.x,z:p.z,ped:p}),2000);
   if(p.state==='dead')return;p.state='dead';p.deadT=30;p.hp=0;
   const a=dirA!=null?dirA:Math.atan2(p.z-P.z,p.x-P.x),s=speed||2;p.vx=Math.cos(a)*s;p.vz=Math.sin(a)*s;
@@ -1236,7 +1242,7 @@ function physCar(c,dt,thr,steer,hb){
   if(c===P.car&&!isBike(c)){if(c.ta==null||Math.abs(c.v)<2)c.ta=na;const gr=(c.grip||1)*(1-.4*rainK)*(hb?.22:1),sp=Math.abs(c.v);c.ta=lerpA(c.ta,na,clamp((sp<8?14:7.5*gr)*dt,0,1));c.slip=angDiff(na,c.ta);if(Math.abs(c.slip)>1.1)c.ta=na-Math.sign(c.slip)*1.1;ma=c.v>=0?c.ta:na;c.v*=1-Math.min(.9,Math.abs(Math.sin(c.slip))*.55*dt);}else c.slip=0;
   const nx=c.x+Math.cos(ma)*c.v*dt,nz=c.z+Math.sin(ma)*c.v*dt;
   if(!carHitsWall(c,nx,nz,na)){c.x=nx;c.z=nz;c.a=na;return false;}
-  const imp=Math.abs(c.v);if(c===P.car&&mission&&mission.id==='drunk'&&mission.stage==='ride'&&imp>6&&time>(mission.bumpT||0)){mission.bumpT=time+1.2;mission.bumps++;toast('🤢 אוי… הבטן שלי…');}
+  const imp=Math.abs(c.v);if(c===P.car&&imp>12&&DL)DL.crashes++;if(c===P.car&&mission&&mission.id==='drunk'&&mission.stage==='ride'&&imp>6&&time>(mission.bumpT||0)){mission.bumpT=time+1.2;mission.bumps++;toast('🤢 אוי… הבטן שלי…');}
   if(!carHitsWall(c,nx,c.z,c.a)){c.x=nx;c.v*=.94;}else if(!carHitsWall(c,c.x,nz,c.a)){c.z=nz;c.v*=.94;}
   else{if(imp>9){damageCar(c,(imp-9)*2.2);const sg=Math.sign(c.v);sparks(c.x+Math.cos(c.a)*c.w/2*sg,.8,c.z+Math.sin(c.a)*c.w/2*sg);if(c===P.car){sfx('crash',clamp(imp/30,.2,1));cam.shake=Math.min(.5,imp/60);}}c.v=-c.v*.3;}
   return true;
@@ -1357,7 +1363,7 @@ function farLane(a,b){return randomLane(P.x,P.z,a,b,300)||randomLane(P.x,P.z,20,
 let beam=null,wpBeam=null,waypoint=null;
 MISSIONS.push({id:'taxi',title:'נהג מונית',desc:'הסע 3 נוסעים ליעדים שלהם. מונית תחכה לידך.',reward:500,icon:'🚕'},{id:'medic',title:'פרמדיק',desc:'קח אמבולנס, אסוף 3 פצועים והבא אותם לבית החולים.',reward:1600,icon:'🚑'},{id:'escape',title:'בריחה גדולה',desc:'המשטרה רודפת אחריך עם 3 כוכבים. תעלים אותם תוך 2 דקות.',reward:1500,icon:'🚨'},{id:'pizza',title:'שליח פיצה',desc:'מסור 5 פיצות לבתים בשכונת הווילות לפני שהן מתקררות.',reward:900,icon:'🍕'});
 function missionExtraStart(id,m){
-  if(peopleStart(id,m))return true;
+  if(peopleStart(id,m))return true;if(moreStart(id,m))return true;
   if(id==='aliens'){alienStart(m);return true;}if(id==='treasure'){treasureStart(m);return true;}if(id==='spy'){spyStart(m);return true;}
   if(m16Start(id,m))return true;
   if(id==='casinoheist'){casinoHeistStart(m);return true;}if(id==='trainheist'){trainHeistStart(m);return true;}
@@ -1370,7 +1376,7 @@ function missionExtraStart(id,m){
   if(id==='pizza'){const hs=[];for(const b of blocks)if(b.di===3)for(const r of b.rects)if(r.house)hs.push({x:r.x+r.w/2,z:r.z+r.d+1.3});hs.sort((a,b)=>D2(a.x,a.z,P.x,P.z)-D2(b.x,b.z,P.x,P.z));const list=hs.slice(0,14).sort(()=>R()-.5).slice(0,5);mission={id,title:m.title,reward:m.reward,list,idx:0,target:list[0],timer:160};return true;}
   return false;}
 function missionExtraUpdate(M,dt){
-  if(peopleUpdate(M,dt))return true;
+  if(peopleUpdate(M,dt))return true;if(moreUpdate(M,dt))return true;
   if(M.id==='aliens'){alienUpdate(M,dt);return true;}if(M.id==='treasure'){treasureUpdate(M);return true;}if(M.id==='spy'){spyUpdate(M,dt);return true;}
   if(m16Update(M,dt))return true;
   if(M.id==='trainheist'){trainHeistUpdate(M,dt);return true;}if(M.id==='favor'){favorUpdate(M,dt);return true;}
@@ -1403,8 +1409,8 @@ function startMission(id){
   else if(id==='steal'){const t=farLane(90,150);const c=mkCar(t.x,t.z,DIRA[t.dir],'sports',0xe6b422);c.golden=true;c.persist=true;cars.push(c);const g=randomLane(t.x,t.z,120,200,300)||farLane(80,200);mission={id,title:m.title,reward:m.reward,car:c,garage:{x:g.x,z:g.z},target:c,timer:null};}
   else if(id==='gang'){const t=farLane(100,170);const v=mkCar(t.x,t.z,DIRA[t.dir],'van',0x5b2d8a);v.persist=true;v.hp=v.maxhp=240;cars.push(v);const gang=[];for(let i=0;i<5;i++){const p=randomWalk(t.x,t.z,3,14,80)||{x:t.x+rr(-2,2),z:t.z+rr(-2,2)};const g=mkPed(p.x,p.z,'gang');g.state='guard';g.persist=true;peds.push(g);gang.push(g);}mission={id,title:m.title,reward:m.reward,van:v,gang,target:v,timer:null};}
   big(m.title,m.desc,'#58c8ff',2800);}
-function endMission(){if(!mission)return;peopleEnd(mission);if(mission.id==='aliens'){for(const u of mission.ufos||[])scene.remove(u.g);for(const a of aliens){a.persist=false;a.state='dead';a.deadT=0;}aliens=[];}if(mission.id==='treasure'&&mission.chest)scene.remove(mission.chest);if(mission.p&&mission.id==='spy')mission.p.persist=false;if(mission.car&&mission.id==='spy')mission.car.persist=false;if(mission.ms)for(const m of mission.ms)scene.remove(m);if(mission.id==='zombie'){for(const z of zombies){z.persist=false;z.state='dead';z.deadT=0;}zombies=[];}if(mission.racers)for(const c of mission.racers){c.persist=false;c.driver=null;}if(mission.cab)mission.cab.persist=false;if(mission.amb){mission.amb.persist=false;mission.amb.siren=false;}for(const q of [mission.pass,mission.pat])if(q){peds=peds.filter(p=>p!==q);removePed(q);}if(mission.car)mission.car.persist=false;if(mission.van)mission.van.persist=false;if(mission.gang)for(const g of mission.gang)g.persist=false;mission=null;}
-function successMission(){storyDone(mission.id);const r=mission.reward;P.money+=r;addXP(120);endMission();big('משימה הושלמה!',`+$${r}`,'#6dff9e');sfx('win');}
+function endMission(){if(!mission)return;peopleEnd(mission);moreEnd(mission);if(mission.id==='aliens'){for(const u of mission.ufos||[])scene.remove(u.g);for(const a of aliens){a.persist=false;a.state='dead';a.deadT=0;}aliens=[];}if(mission.id==='treasure'&&mission.chest)scene.remove(mission.chest);if(mission.p&&mission.id==='spy')mission.p.persist=false;if(mission.car&&mission.id==='spy')mission.car.persist=false;if(mission.ms)for(const m of mission.ms)scene.remove(m);if(mission.id==='zombie'){for(const z of zombies){z.persist=false;z.state='dead';z.deadT=0;}zombies=[];}if(mission.racers)for(const c of mission.racers){c.persist=false;c.driver=null;}if(mission.cab)mission.cab.persist=false;if(mission.amb){mission.amb.persist=false;mission.amb.siren=false;}for(const q of [mission.pass,mission.pat])if(q){peds=peds.filter(p=>p!==q);removePed(q);}if(mission.car)mission.car.persist=false;if(mission.van)mission.van.persist=false;if(mission.gang)for(const g of mission.gang)g.persist=false;mission=null;}
+function successMission(){storyDone(mission.id);if(DL)DL.missions.push(mission.title);const r=mission.reward;P.money+=r;addXP(120);endMission();big('משימה הושלמה!',`+$${r}`,'#6dff9e');sfx('win');}
 function failMission(reason,silent){endMission();if(!silent){big('המשימה נכשלה',reason||'','#ff3d7f');sfx('fail');}}
 function missionUpdate(dt){if(!mission)return;const M=mission;
   if(M.timer!=null){M.timer-=dt;if(M.timer<=0){failMission('נגמר הזמן');return;}}
@@ -1557,7 +1563,7 @@ function vehRow(kind,k,d,owned){const own=!!owned;return`<div class="item"><div 
 let checkin=null,cine=null;
 function bestOwnedPlane(){const o=garage.filter(e=>PLANES[e.k]);return o.find(e=>e.k==='jet')||o.find(e=>e.k==='stunt')||o.find(e=>e.k==='cessna')||o[0]||null;}
 function tripPrice(dest,mode){return Math.round((DEST[dest].price||300)*(mode==='sea'?.75:1));}
-function renderHub(k){const H=hubInfo(k),here=H.dest;{const r9=p9Render(H);if(r9!=null)return r9;const r8=p8Render(H);if(r8!=null)return r8;}if(H.type==='biz')return renderBiz(H);if(H.type==='jobs')return renderJobs();if(H.type==='race')return renderRaceHub();if(H.type==='friends')return renderFriends();if(H.type==='ride')return `<p class="note">יש לך <b style="color:var(--cash)">${money(P.money)}</b></p><div class="item"><div class="ic">${H.icon}</div><div class="tx"><b>${H.title}</b><p>${H.ride==='wheel'?'סיבוב שלם עם נוף לכל העיר':'ירידות, עליות ומהירות מטורפת'}</p><span class="pr">$30</span></div><button class="pcbtn" data-ride="${H.ride}" ${P.money<30?'disabled':''}>לעלות!</button></div>`;if(H.type==='shop')return renderShopHub(H);if(H.type==='wardrobe')return renderWardrobe();if(H.type==='rentcar')return renderRentHub();if(H.type==='bed')return `<div class="item"><div class="ic">🛏️</div><div class="tx"><b>לישון במיטה שלך</b><p>בריאות מלאה, בוקר חדש והמשחק נשמר</p></div><button class="pcbtn" data-homesleep="1">לך לישון</button></div>`;let h=`<p class="note">יש לך <b style="color:var(--cash)">${money(P.money)}</b></p>`;
+function renderHub(k){const H=hubInfo(k),here=H.dest;{const rm=moreRender(H);if(rm!=null)return rm;}{const r9=p9Render(H);if(r9!=null)return r9;const r8=p8Render(H);if(r8!=null)return r8;}if(H.type==='biz')return renderBiz(H);if(H.type==='jobs')return renderJobs();if(H.type==='race')return renderRaceHub();if(H.type==='friends')return renderFriends();if(H.type==='ride')return `<p class="note">יש לך <b style="color:var(--cash)">${money(P.money)}</b></p><div class="item"><div class="ic">${H.icon}</div><div class="tx"><b>${H.title}</b><p>${H.ride==='wheel'?'סיבוב שלם עם נוף לכל העיר':'ירידות, עליות ומהירות מטורפת'}</p><span class="pr">$30</span></div><button class="pcbtn" data-ride="${H.ride}" ${P.money<30?'disabled':''}>לעלות!</button></div>`;if(H.type==='shop')return renderShopHub(H);if(H.type==='wardrobe')return renderWardrobe();if(H.type==='rentcar')return renderRentHub();if(H.type==='bed')return `<div class="item"><div class="ic">🛏️</div><div class="tx"><b>לישון במיטה שלך</b><p>בריאות מלאה, בוקר חדש והמשחק נשמר</p></div><button class="pcbtn" data-homesleep="1">לך לישון</button></div>`;let h=`<p class="note">יש לך <b style="color:var(--cash)">${money(P.money)}</b></p>`;
   if(H.type==='air'){if(checkin)return renderCheckin();
     h+=`<p class="note"><b>✈️ טיסות רגילות</b> · צ׳ק-אין, מזוודות ובידוק</p>`;
     for(const d in DEST){if(d===here||!DEST[d].air)continue;const pr=tripPrice(d,'air');h+=`<div class="item"><div class="ic">${DEST[d].icon}</div><div class="tx"><b>${DEST[d].name}</b><p>${here==='home'?'טיסה מהעיר':'טיסה מכאן'}</p><span class="pr">$${pr}</span></div><button class="pcbtn" data-fly="${d}" ${P.money<pr?'disabled':''}>לצ׳ק-אין</button></div>`;}
@@ -1586,7 +1592,7 @@ function renderCheckin(){const c=checkin,D0=DEST[c.dest];const st=[['🧳','צ׳
   let h=`<div class="pass"><b>🎫 כרטיס עלייה למטוס</b><span>${myNick||'נוסע'} · אל ${D0.icon} ${D0.name}</span><span>שער ${c.gate} · מושב ${c.seat} · $${tripPrice(c.dest,'air')}</span></div>`;
   st.forEach((s,i)=>{const done=i<c.step,cur=i===c.step;h+=`<div class="item" style="opacity:${i>c.step?.45:1}"><div class="ic">${done?'✅':s[0]}</div><div class="tx"><b>${s[1]}</b><p>${done?c.msg[i]:s[2]}</p></div>${cur?`<button class="pcbtn" data-ck="1">${s[3]}</button>`:''}</div>`;});
   return h+`<button class="pcbtn red" data-ckx="1" style="width:100%;margin-top:6px">בטל טיסה</button>`;}
-function hubClick(t){const d=t.dataset;if(storyClick(t))return true;if(p9Click(t))return true;if(p8Click(t))return true;if(rtcClick(t))return true;if(extraHubClick(t))return true;if(extraHubClick2(t))return true;
+function hubClick(t){const d=t.dataset;if(storyClick(t))return true;if(moreClick(t))return true;if(p9Click(t))return true;if(p8Click(t))return true;if(rtcClick(t))return true;if(extraHubClick(t))return true;if(extraHubClick2(t))return true;
   if(d.fly){if(P.money<tripPrice(d.fly,'air'))return true;checkin={dest:d.fly,step:0,msg:[],gate:1+((R()*12)|0),seat:(10+((R()*25)|0))+'ABCDEF'[(R()*6)|0],beep:false,beeped:false};renderMenu();return true;}
   if(d.ckx){checkin=null;renderMenu();return true;}
   if(d.ck){const c=checkin;if(!c)return true;
@@ -1946,7 +1952,7 @@ function bankUpdate(M,dt){if(!M.ach&&!M.loc&&bankInside(M,dt))return;const BANK=
   else if(M.stage==='rob'){const d=D(BANK,P);if(d<5)M.prog+=dt;M.status=d<5?`🏦 מרוקן את הכספת… ${Math.min(100,Math.round(M.prog/14*100))}%`:'⚠️ חזור לכספת!';
     if(R()<dt*2)part(true,BANK.x+rr(-2,2),2+rr(0,2),BANK.z-2,rr(-2,2),rr(1,3),rr(-2,2),.6,.15,0x6dff9e,0,5);
     if(M.prog>=(M.dur||14)){M.cash=Math.round(rr(...(M.cashR||[1000,1000])));M.stage='escape';heat=22;lastCrime=time;M.target=HIDE;M.timer=240;big('💰 יש לך את הכסף!',`${money(M.cash)} בשקים · ברח למחבוא!`,'#6dff9e',3000);sfx('cash');}}
-  else{M.status=`💰 ${money(M.cash)} · ברח למחבוא הצהוב!`;lastCrime=Math.max(lastCrime,time-5);if(D(me(),HIDE)<9){P.money+=M.cash;heat=0;const c=M.cash,ac=M.ach||'bank';endMission();unlock(ac);addXP(200);big('השוד הצליח! 🏦',`+${money(c)}`,'#6dff9e',3500);sfx('win');save();}}}
+  else{M.status=`💰 ${money(M.cash)} · ברח למחבוא הצהוב!`;lastCrime=Math.max(lastCrime,time-5);if(D(me(),HIDE)<9){P.money+=M.cash;heat=0;const c=M.cash,ac=M.ach||'bank';if(M.coop){M.paid=true;fgSend({a:'paid',kind:'coop',amt:M.cash,from:myNick,to:M.coop});}if(DL&&!M.ach)DL.heist=M.cash;storyDone(M.id);endMission();unlock(ac);addXP(200);big('השוד הצליח! 🏦',`+${money(c)}`,'#6dff9e',3500);sfx('win');save();}}}
 /* ---- businesses ---- */
 const BIZDEF=[['carwash','שטיפת מכוניות','🧽',5000,150],['pizzeria','פיצרייה','🍕',8000,250],['garage','מוסך','🔧',12000,400],['club','מועדון לילה','🪩',25000,900],['hotel','מלון בוטיק','🏨',60000,2200]];
 let bizOwned=[],bizT=120;
@@ -2036,7 +2042,7 @@ function renderRaceHub(){return `<div class="item"><div class="ic">🏁</div><di
   `<div class="item"><div class="ic">👥</div><div class="tx"><b>מרוץ עם חברים</b><p>כל מי שמחובר עכשיו מקבל הזמנה ומגיע לקו הזינוק</p></div><button class="pcbtn" data-frace="1" ${ghosts.size?'':'disabled'}>הזמן</button></div>`+(ghosts.size?'':`<p class="note">אין חברים מחוברים כרגע. לחץ 👥 כדי לראות איך מזמינים.</p>`);}
 let raceInvite=null;
 function joinRace(){const r=raceInvite;if(!r)return;raceInvite=null;$('invite').classList.remove('show');const s0=r.cps[0];const lp=randomLane(s0.x,s0.z,15,40,200);if(!lp)return;if(P.car){P.car.driver=null;P.car=null;}P.boat=null;P.plane=null;const c=mkCar(lp.x,lp.z,DIRA[lp.dir],'sports',pick(PAINTS)[0]);c.persist=true;c.driver='player';cars.push(c);P.car=c;P.x=c.x;P.z=c.z;startStreetRace(true,r.cps);}
-function renderFriends(){let h=renderRoom()+renderFriendGames()+(P.codeUsed?`<p class="note">🎟️ כבר השתמשת בקוד המתנה</p>`:`<div class="item" style="display:block"><b>🎟️ קוד מתנה</b><input id="giftCode" maxlength="20" placeholder="הכנס קוד" style="width:100%;margin:8px 0;font-family:inherit;font-size:17px;font-weight:800;padding:9px;border-radius:10px;border:2px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;text-align:center;direction:ltr"><button class="pcbtn" data-giftcode="1" style="width:100%">הפעל קוד</button></div>`)+`<div class="item"><div class="ic">⚙️</div><div class="tx"><b>איכות גרפיקה</b><p>${GFX_HI?'גבוהה: צללים ועננים':'מהירה: בלי צללים (לטלפונים חלשים)'}</p></div><button class="pcbtn" data-gfx="${GFX_HI?'lo':'hi'}">${GFX_HI?'מהירה':'גבוהה'}</button></div>`+renderRtc()+`<button class="pcbtn red" data-logout="1" style="width:100%;margin:6px 0">🚪 התנתק (${(curUser||'').replace(/[<>&"]/g,'')})</button>`;if(ghosts.size){h+=`<p class="note"><b>🌐 מחוברים עכשיו:</b></p>`;for(const g of ghosts.values())h+=`<div class="item"><div class="ic">🧍</div><div class="tx"><b>${g.nick.replace(/[<>&"]/g,'')}</b><p>${g.mode==='c'?'נוהג 🚗':g.mode==='p'?'טס ✈️':g.mode==='b'?'שט 🚤':'הולך 🚶'} · ${Math.round(Math.hypot(g.x-P.x,g.z-P.z))} מ׳ ממך</p></div><button class="pcbtn" data-goto="${g.peer}">📍 סמן</button><button class="pcbtn" data-gift="${g.peer}" style="margin-inline-start:4px">🎁 $100</button></div>`;h+=`<button class="pcbtn" data-frace="1" style="width:100%">🏁 הזמן את כולם למרוץ</button>`;}
+function renderFriends(){let h=renderRoom()+renderGroupGames()+renderFriendGames()+(P.codeUsed?`<p class="note">🎟️ כבר השתמשת בקוד המתנה</p>`:`<div class="item" style="display:block"><b>🎟️ קוד מתנה</b><input id="giftCode" maxlength="20" placeholder="הכנס קוד" style="width:100%;margin:8px 0;font-family:inherit;font-size:17px;font-weight:800;padding:9px;border-radius:10px;border:2px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;text-align:center;direction:ltr"><button class="pcbtn" data-giftcode="1" style="width:100%">הפעל קוד</button></div>`)+`<div class="item"><div class="ic">⚙️</div><div class="tx"><b>איכות גרפיקה</b><p>${GFX_HI?'גבוהה: צללים ועננים':'מהירה: בלי צללים (לטלפונים חלשים)'}</p></div><button class="pcbtn" data-gfx="${GFX_HI?'lo':'hi'}">${GFX_HI?'מהירה':'גבוהה'}</button></div>`+renderRtc()+`<button class="pcbtn red" data-logout="1" style="width:100%;margin:6px 0">🚪 התנתק (${(curUser||'').replace(/[<>&"]/g,'')})</button>`;if(ghosts.size){h+=`<p class="note"><b>🌐 מחוברים עכשיו:</b></p>`;for(const g of ghosts.values())h+=`<div class="item"><div class="ic">🧍</div><div class="tx"><b>${g.nick.replace(/[<>&"]/g,'')}</b><p>${g.mode==='c'?'נוהג 🚗':g.mode==='p'?'טס ✈️':g.mode==='b'?'שט 🚤':'הולך 🚶'} · ${Math.round(Math.hypot(g.x-P.x,g.z-P.z))} מ׳ ממך</p></div><button class="pcbtn" data-goto="${g.peer}">📍 סמן</button><button class="pcbtn" data-gift="${g.peer}" style="margin-inline-start:4px">🎁 $100</button></div>`;h+=`<button class="pcbtn" data-frace="1" style="width:100%">🏁 הזמן את כולם למרוץ</button>`;}
   else h+=`<p class="note">אף חבר לא מחובר עכשיו.</p>`;
   return h+`<div class="item"><div class="ic">📨</div><div class="tx"><b>איך מזמינים חברים?</b><p>1. לחץ "🏠 פתח חדר חדש" למעלה.<br>2. שלח לחברים את הקישור או את הקוד בן 4 האותיות.<br>3. הם לוחצים על הקישור (או מקלידים את הקוד) ונכנסים לעיר שלך. עד 8 שחקנים ביחד: רואים אחד את השני, מדברים בצ'אט, יורים ומתחרים במרוצים.</p></div></div>`;}
 function extraHubClick2(t){const d=t.dataset;
@@ -2638,7 +2644,7 @@ function thunder(vol){if(!AC)return;try{const now=AC.currentTime,s=AC.createBuff
 function engFreq(c){const v=Math.abs(c.v),top=Math.max(20,c.max||30),edges=[0,.18,.36,.56,.78,1.01];let g=1;while(g<5&&v>edges[g]*top)g++;if(g!==gear){if(g>gear)shiftT=.12;gear=g;}
   const lo=edges[g-1]*top,hi=edges[g]*top,rpm=clamp((v-lo)/Math.max(1,hi-lo),0,1);shiftT=Math.max(0,shiftT-1/60);return 42+rpm*(70+g*6)+(g-1)*14-(shiftT>0?25:0);}
 let groundM=null,groundBase=null;
-function updReal(dt){realAudio();bankBtn();const c=P.car,now=AC?AC.currentTime:0;
+function updReal(dt){realAudio();bankBtn();fuelTick(dt);dayTick();const c=P.car,now=AC?AC.currentTime:0;
   // --- player car: tyre slip, skid marks, smoke, splashes
   let slip=0;if(c&&!c.air&&!isBike(c)&&!MODELS[CT[c.type].model].animal){slip=Math.abs(c.slip||0);const spd=Math.abs(c.v),braking=(keys.KeyS||keys.ArrowDown)&&c.v>14;
     const skid=spd>6&&(slip>.13||(braking&&spd>14)||((keys.Space||jumpHeld)&&spd>9));const w=wheelPts(c),y=groundY(c.x,c.z);
@@ -2799,7 +2805,7 @@ function enterBank(M){bankFade('🏦 נכנס לבנק…',()=>{if(P.car){P.car.
   line('👩‍💼 פקידה','שלום, ברוך הבא לבנק העיר! איך אפשר לעזור?');});}
 function leaveBank(M,escape){bankFade(escape?'🏃 בורח מהבנק…':'🚪 יוצא מהבנק…',()=>{const B=window.__BANK;P.x=B.x;P.z=B.z+3.5;P.a=Math.PI/2;cam.yaw=Math.PI/2;cam.x=P.x;cam.z=P.z-4;M.inside=false;
   for(const q of M.npcs||[]){peds=peds.filter(p=>p!==q);removePed(q);}M.npcs=[];
-  if(escape){M.stage='escape';heat=22;lastCrime=time;M.target=HIDE;M.timer=240;for(let i=0;i<5;i++){const q=randomWalk(B.x,B.z,12,30,60);if(q){const g=mkPed(q.x,q.z,'cop');g.state='hostile';peds.push(g);}}big('💰 יש לך את הכסף!',`${money(M.cash)} בשקים · ברח למחבוא הצהוב!`,'#6dff9e',3200);sfx('cash');}});}
+  if(escape){if(M.coop)fgSend({a:'out',kind:'coop',from:myNick,to:M.coop});M.stage='escape';heat=22;lastCrime=time;M.target=HIDE;M.timer=240;for(let i=0;i<5;i++){const q=randomWalk(B.x,B.z,12,30,60);if(q){const g=mkPed(q.x,q.z,'cop');g.state='hostile';peds.push(g);}}big('💰 יש לך את הכסף!',`${money(M.cash)} בשקים · ברח למחבוא הצהוב!`,'#6dff9e',3200);sfx('cash');}});}
 function handsUp(){const M=mission;if(!M||M.id!=='bank'||M.stage!=='inside')return;const w=WEAP[P.weapons[P.wi].id];if(w.melee){toast('🔫 צריך נשק ביד! בחר נשק ואז צעק');return;}
   M.stage='tellers';M.ti=0;M.next=time+1.8;showBubble(P,'🙌 כולם להרים ידיים! זה שוד!',null,'me',3.5);line('🔫 אתה','כולם להרים ידיים! זה שוד! אף אחד לא זז!');sfx('boom',.35);cam.shake=.15;P.aimT=3;
   const sc=['😱','אל תירה!','🙏 בבקשה!','😨','אמא!!'];for(const c of M.cust){c.state='surrender';setTimeout(()=>showBubble(c,pick(sc),null,null,2.5),rr(200,1400));}
@@ -2817,6 +2823,144 @@ function bankInside(M,dt){const btn=$('bHands');
   if(M.stage==='exit'){M.status=`💰 ${money(M.cash)} · צא מהדלת! 🚪`;if(D(P,BKDOOR)<1.3)leaveBank(M,true);return true;}
   return false;}
 function bankBtn(){const b=$('bHands');if(!b)return;const on=!!(mission&&mission.id==='bank'&&mission.stage==='inside'&&!menuOpen);b.classList.toggle('hidden',!on);}
+/* ============ more city life: fuel, apartments, newspaper, heli taxi, lake, new missions, group games ============ */
+// ---------- fuel ----------
+const FUELS=[];
+function buildFuel(){const spots=[[3,4],[12,7],[20,15],[7,19],[16,22]];
+  const add=(g,m,x,y,z)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);scene.add(o);return o;};
+  const sg=ctex(256,96,g=>{g.fillStyle='#d62828';g.fillRect(0,0,256,96);g.fillStyle='#fff';g.font='bold 52px "Secular One", Assistant, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('⛽ דלק',128,52);});
+  const mk=(x,z,y,ax)=>{const L=ax?10:12,W=ax?12:10;add(new THREE.BoxGeometry(ax?7:12,.35,ax?12:7),mat(0xf4f4f4),x,y+5.2,z);add(new THREE.BoxGeometry(ax?7.1:12.1,.5,ax?12.1:7.1),mat(0xd62828),x,y+4.85,z);
+    for(const [u,v] of [[-2.8,-4.5],[2.8,-4.5],[-2.8,4.5],[2.8,4.5]])add(new THREE.CylinderGeometry(.18,.18,5,8),mat(0xdddddd),x+(ax?u:v),y+2.5,z+(ax?v:u));
+    for(const v of [-2,2]){const px=x+(ax?2:v),pz=z+(ax?v:2);add(new THREE.BoxGeometry(.7,1.5,.5),mat(0xd62828),px,y+.75,pz);add(new THREE.BoxGeometry(.5,.4,.52),basic(0x9fe0ff),px,y+1.2,pz);}
+    const s=add(new THREE.PlaneGeometry(3.2,1.2),new THREE.MeshBasicMaterial({map:sg,side:THREE.DoubleSide}),x,y+6.1,z);s.rotation.y=ax?Math.PI/2:0;FUELS.push({x,z});};
+  for(const [m,k] of spots)mk((8*m+1.5)*T+5,(8*k+5)*T,0,true);
+  const h=HLINK[30];mk(h.x,h.z+9,hillH(h.x,h.z+9),false);}
+function fuelTick(dt){const c=P.car;if(!c||c.dead||isBike(c)&&MODELS[CT[c.type].model].animal)return;if(MODELS[CT[c.type].model].animal)return;
+  if(c.fuel==null)c.fuel=c===personal||c.persist?100:rr(35,100);c.fuel=Math.max(0,c.fuel-Math.abs(c.v)*dt*.0075);
+  if(c.fuel<=0&&!c.noFuelT){c.noFuelT=1;big('⛽ נגמר הדלק!','חפש תחנת דלק במפה (⛽) או דחוף…','#ff9a3c',2600);}if(c.fuel>5)c.noFuelT=0;else if(c.fuel<15&&!c.lowT){c.lowT=1;toast('⛽ הדלק כמעט נגמר! תחנת דלק מסומנת במפה');}if(c.fuel>20)c.lowT=0;
+  for(const f of FUELS){if(D2(c.x,c.z,f.x,f.z)<64&&Math.abs(c.v)<1.5){if(c.fuel<99.5){const add=Math.min(100-c.fuel,30*dt),cost=add*1.2;if(P.money>=cost){P.money-=cost;c.fuel+=add;c.fueling=(c.fueling||0)+cost;}else if(!c.broke){c.broke=1;toast('💸 אין לך מספיק כסף לדלק');}}else if(c.fueling){toast(`⛽ המיכל מלא! שילמת ${money(Math.round(c.fueling))}`);sfx('cash');c.fueling=0;c.broke=0;}return;}}
+  if(c.fueling){toast(`⛽ תדלקת ב-${money(Math.round(c.fueling))}`);c.fueling=0;}}
+// ---------- apartments (daily rent) ----------
+const APTS=[];
+function buildApts(){const L=[['a1','דירת סטודיו',[3,9],15000,600],['a2','דירת 3 חדרים',[9,3],32000,1300],['a3','פנטהאוז במרכז',[11,13],90000,4000],['a4','דירה ליד הים',[19,21],45000,1900]];
+  const sg=ctex(256,96,g=>{g.fillStyle='#1d6b3a';g.fillRect(0,0,256,96);g.fillStyle='#fff';g.font='bold 46px "Secular One", Assistant, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('🏠 למכירה',128,52);}),sm=new THREE.MeshBasicMaterial({map:sg,side:THREE.DoubleSide});
+  const free=(x,z)=>isWalk(x,z)&&!solidC(x,z,.5)&&!HUBS.some(h=>D2(h.x,h.z,x,z)<64)&&!stores.some(h=>D2(h.x,h.z,x,z)<64)&&!computers.some(h=>D2(h.x,h.z,x,z)<64);
+  const pts=L.map(([id,n,[bx,by],price,inc])=>{const b=blocks[by*BL+bx];for(const [ox,oz] of [[10,-2.5],[3,-2.5],[17,-2.5],[10,22.5],[3,22.5],[17,22.5],[-2.5,10],[22.5,10]]){const x=b.ix+ox,z=b.iz+oz;if(free(x,z))return [id,n,x,z,price,inc];}return [id,n,b.ix+10,b.iz-2.5,price,inc];});
+  const fh=[[-640,150],[-230,60]];pts.push(['a5','חווה בגבעות',fh[0][0]+5.5,fh[0][1],60000,2600],['a6','בית כפרי',fh[1][0]+5.5,fh[1][1],38000,1600]);
+  for(const [id,n,x,z,price,inc] of pts){const y=groundY(x,z);const s=new THREE.Mesh(new THREE.PlaneGeometry(2.4,.9),sm);s.position.set(x,y+2.6,z);scene.add(s);const pl=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,2.2,6),mat(0x6a4a2a));pl.position.set(x,y+1.1,z);scene.add(pl);
+    const a={id,n,x,z,price,inc,sign:s};APTS.push(a);HUBS.push({k:'apt_'+id,type:'apt',apt:a,x,z:z+.01,icon:'🏠',title:`🏠 ${n}`});}}
+const ownApt=id=>(stats.apts||[]).includes(id);
+function renderApt(H){const a=H.apt,own=ownApt(a.id);let h=`<div class="item"><div class="ic">🏠</div><div class="tx"><b>${a.n}</b><p>שוכרים משלמים לך כל יום במשחק (בערך כל 7 דקות)</p><span class="pr">${own?'✅ שלך':money(a.price)} · הכנסה ${money(a.inc)} ליום</span></div>${own?'':`<button class="pcbtn" data-aptbuy="${a.id}" ${P.money<a.price?'disabled':''}>קנה</button>`}</div>`;
+  const mine=APTS.filter(x=>ownApt(x.id));if(mine.length)h+=`<p class="note">🏘️ יש לך ${mine.length} דירות · ${money(mine.reduce((s,x)=>s+x.inc,0))} ליום</p>`;return h;}
+// ---------- daily newspaper ----------
+let DL=null,lastDay=-1;
+function dayReset(){DL={missions:[],heist:0,jewel:0,kills:0,km0:stats.km,fish0:stats.fish,stars:0,crashes:0,m0:P.money,rent:0,rain:false};}
+const SMALLNEWS=['🐈 חתול נתקע על עץ בשכונת הווילות. הכבאים חילצו אותו','🍕 הפיצרייה בעיר הכריזה: מבצע 1+1 כל השבוע','⚽ הקבוצה המקומית ניצחה 3:1','🦆 משפחת ברווזים חצתה את הכביש הראשי והפקק נמשך שעה','🎤 זמר מפורסם נראה אוכל פלאפל במרכז העיר','⛰️ מטיילים מספרים: הנוף מתצפית הגבעות מדהים','🎣 דייג תפס דג ענק באגם שבגבעות','🚧 עבודות בכביש: נהגים מתבקשים להיזהר'];
+function newDay(n){if(!DL){dayReset();return;}const mine=APTS.filter(a=>ownApt(a.id)),rent=mine.reduce((s,a)=>s+a.inc,0);if(rent){P.money+=rent;DL.rent=rent;}
+  const km=Math.max(0,stats.km-DL.km0),fish=stats.fish-DL.fish0,dm=Math.round(P.money-DL.m0);let head,sub;
+  if(DL.heist){head=`🏦 שוד נועז בבנק העיר!`;sub=`השודד נמלט עם ${money(DL.heist)}. המשטרה מבקשת מהציבור עזרה`;}
+  else if(DL.jewel){head='💎 יהלומים נעלמו מחנות התכשיטים!';sub=`נגנבו תכשיטים בשווי ${money(DL.jewel)}. מערכת הלייזרים לא עצרה את הגנב`;}
+  else if(DL.stars>=4){head='🚨 מרדף פרוע ברחובות העיר';sub=`${DL.stars} ניידות רדפו אחרי נהג משוגע. הוא עדיין חופשי`;}
+  else if(DL.missions.length>=2){head=`⭐ גיבור העיר: ${DL.missions.length} משימות ביום אחד!`;sub=DL.missions.slice(0,3).join(' · ');}
+  else if(DL.missions.length){head=`⭐ ${DL.missions[0]}: הצלחה!`;sub='תושבי העיר מודים לך';}
+  else if(DL.kills>4){head='😱 גל אלימות בעיר';sub=`${DL.kills} נפגעים ביום אחד. התושבים מפחדים לצאת מהבית`;}
+  else if(DL.crashes>5){head='💥 יום של תאונות';sub=`${DL.crashes} התנגשויות בכבישי העיר. סעו בזהירות!`;}
+  else{head='☀️ יום שקט בעיר';sub='שום דבר מיוחד לא קרה. או שאולי מישהו מתכנן משהו…';}
+  const items=[];if(km>.3)items.push(`🚗 נסעת ${km.toFixed(1)} ק״מ`);if(fish>0)items.push(`🎣 תפסת ${fish} דגים`);if(rent)items.push(`🏠 הדירות שלך הכניסו ${money(rent)}`);if(dm)items.push(`💰 ${dm>0?'הרווחת':'הוצאת'} ${money(Math.abs(dm))}`);
+  showPaper(n,head,sub,items,pick(SMALLNEWS),DL.rain);dayReset();save();}
+function showPaper(n,head,sub,items,small,rain){let el=$('paper');if(!el){el=document.createElement('div');el.id='paper';document.body.appendChild(el);el.addEventListener('click',e=>{e.stopPropagation();if(e.target.closest('[data-pclose]'))el.classList.remove('show');});}
+  const esc=x=>String(x).replace(/[<>&"]/g,'');
+  el.innerHTML=`<div class="pp"><div class="pphead">📰 חדשות העיר<small>יום ${n} · ${rain?'🌧️ גשום':'☀️ בהיר'}</small></div><h2>${esc(head)}</h2><p class="ppsub">${esc(sub)}</p>${items.length?`<div class="ppbox"><b>היום שלך:</b>${items.map(i=>`<div>${esc(i)}</div>`).join('')}</div>`:''}<p class="ppsmall">${esc(small)}</p><button class="btn" data-pclose="1" style="width:100%">סגור</button></div>`;el.classList.add('show');sfx('pickup');}
+function dayTick(){if(!started)return;const d=Math.floor(dayT/420);if(lastDay<0){lastDay=d;dayReset();return;}if(DL){DL.stars=Math.max(DL.stars,stars());if(raining)DL.rain=true;}if(d>lastDay&&started&&!menuOpen){lastDay=d;newDay(d);}}
+// ---------- helicopter taxi ----------
+const PADS=[];
+function buildPads(){const b=blocks[12*BL+12];const L=[['מרכז העיר',b.ix+10,b.iz+22.5],['שדה התעופה',150,-40],['תצפית הגבעות',HILLTOP.x+9,HILLTOP.z+3],['הנמל',330,WS+30]];
+  const ht=ctex(256,256,g=>{g.fillStyle='#2f3a40';g.fillRect(0,0,256,256);g.strokeStyle='#ffd23a';g.lineWidth=14;g.beginPath();g.arc(128,128,110,0,6.283);g.stroke();g.fillStyle='#fff';g.font='bold 150px Arial';g.textAlign='center';g.textBaseline='middle';g.fillText('H',128,138);});
+  for(let [n,x,z] of L){for(let i=0;i<8&&HUBS.some(h=>D2(h.x,h.z,x,z)<64);i++)x+=8;const y=groundY(x,z);const m=new THREE.Mesh(new THREE.CircleGeometry(4,28).rotateX(-Math.PI/2),new THREE.MeshLambertMaterial({map:ht}));m.position.set(x,y+.06,z);scene.add(m);const p={n,x,z};PADS.push(p);HUBS.push({k:'pad'+PADS.length,type:'heli',pad:p,x,z,icon:'🚁',title:`🚁 מנחת · ${n}`});}}
+function renderPads(H){return`<p class="note">🚁 טיסה במסוק לכל מנחת בעיר. $250 לטיסה</p>`+PADS.map((p,i)=>p===H.pad?'':`<div class="item"><div class="ic">🚁</div><div class="tx"><b>${p.n}</b><p>${Math.round(Math.hypot(p.x-H.pad.x,p.z-H.pad.z))} מ׳</p></div><button class="pcbtn" data-heli="${i}" ${P.money<250?'disabled':''}>טוס</button></div>`).join('');}
+function heliFly(from,to){P.money-=250;closeMenu();sfx('pickup');let h;const dx=to.x-from.x,dz=to.z-from.z,yaw=Math.atan2(dz,dx);
+  playCine({dur:10,cap:`🚁 טסים אל ${to.n}…`,start(){h=mkPlane('heli',0xd62828,from.x,from.z,yaw);},cleanup(){if(h)removeVeh(h);},done(){P.x=to.x+3;P.z=to.z+3;P.car=null;cam.x=P.x;cam.z=P.z-5;toast(`🚁 נחתת ב${to.n}!`);},
+    step(t){const k=clamp((t-2)/6,0,1),e=k*k*(3-2*k),y0=groundY(from.x,from.z),y1=groundY(to.x,to.z),up=Math.min(1,t/2)*(1-clamp((t-8)/1.8,0,1)),x=from.x+dx*e,z=from.z+dz*e,y=y0+(y1-y0)*e+1.3+up*45;
+      h.g.position.set(x,y,z);h.g.rotation.set(0,-yaw,-.12*Math.sin(e*Math.PI),'YXZ');if(h.rotor)h.rotor.rotation.y+=.8;if(h.trotor)h.trotor.rotation.y+=.9;
+      camera.position.set(x-Math.cos(yaw)*16,y+6,z-Math.sin(yaw)*16+6);camera.lookAt(x,y,z);}});}
+// ---------- lake & forest in the hills ----------
+function buildLake(){const ax=LKX+LKR-2,az=LKZ,y=hillH(ax+8,az);
+  const dk=new THREE.Mesh(new THREE.BoxGeometry(14,.3,2.6),mat(0x8a6a4a));dk.position.set(ax+1,-.25,az);scene.add(dk);for(const u of [-5,0,5])for(const v of [-1.1,1.1]){const pl=new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,2.5,6),mat(0x6a4a2a));pl.position.set(ax+1+u,-1,az+v);scene.add(pl);}
+  const b=mkBoat('speedboat',0x2a7fff,LKX+LKR-14,LKZ+4,Math.PI);b.lake=true;
+  HUBS.push({k:'fish4',type:'fish',x:LKX+LKR+6,z:LKZ+3,icon:'🎣',title:'🎣 דיג באגם'});}
+// ---------- group games: everyone vs. the robber, co-op heist, hills race ----------
+function hillsRace(){if(!P.car){toast('🏁 צריך להיות ברכב');return;}const cps=[{x:-25,z:205}];for(const i of [30,60]){cps.push({x:Math.round(HLINK[i].x),z:Math.round(HLINK[i].z)});}for(let i=40+40;i<40+360;i+=40){const p=HROAD[i%360];cps.push({x:Math.round(p.x),z:Math.round(p.z)});}cps.push({x:Math.round(HROAD[40].x),z:Math.round(HROAD[40].z)});startStreetRace(true,cps);if(mission){mission.title='🏁 מרוץ בגבעות';}toast('🏁 מרוץ בגבעות! הנקודה הראשונה ביציאה המערבית של העיר');}
+function crgInvite(){if(fg){toast('כבר יש משחק פעיל');return;}if(!ghosts.size){toast('אין חברים מחוברים');return;}fgSend({a:'inv',kind:'crg',from:myNick,to:'*'});closeMenu();fg={kind:'crg',role:'rob',opp:'השוטרים',cops:[],t:195,score:0,taken:0,phase:'play'};big('🏃 אתה הגנב!','כל החברים הם שוטרים. תברח 3 דקות!','#58c8ff',3500);}
+function fgExtra(m){const from=String(m.from||'חבר').slice(0,14),k=m.kind;
+  if(k==='crg'){if(m.a==='go'&&fg&&fg.kind==='crg'&&fg.role==='rob'){if(!fg.cops.includes(from)){fg.cops.push(from);toast(`🚓 ${from} הצטרף כשוטר!`);}return true;}
+    if(m.a==='caught'&&fg&&fg.kind==='crg'){endFg(fg.role==='cop'?'win':'lose',`🚓 ${from} תפס את הגנב!`);return true;}
+    if(m.a==='escaped'&&fg&&fg.kind==='crg'){endFg(fg.role==='rob'?'win':'lose','🏃 הגנב ברח מכולם!');return true;}return m.a!=='inv';}
+  if(k==='coop'){if(m.a==='go'){if(mission)failMission(null,true);startMission('bank');if(mission){mission.coop=from;big('🤝 שוד משותף!',`אתה השודד. ${from} הוא נהג המילוט שלך`,'#58c8ff',3500);}return true;}
+    if(m.a==='out'&&mission&&mission.id==='getaway'){mission.stage='escort';heat=Math.max(heat,8);lastCrime=time;big('🚨 השותף יצא מהבנק!','לווה אותו למחבוא והגן עליו!','#ff3d7f',3000);return true;}
+    if(m.a==='paid'&&mission&&mission.id==='getaway'){const s=Math.round((+m.amt||0)*.4);mission.reward=s;successMission();toast(`🤝 קיבלת ${money(s)} מהשוד`);return true;}
+    if(m.a==='fail'&&mission&&mission.id==='getaway'){failMission('השותף נכשל בשוד');return true;}return m.a!=='inv';}
+  return false;}
+function fgAccept2(p){if(p.kind==='crg'){fgSend({a:'go',kind:'crg',from:myNick,to:p.from});fg={kind:'crg',role:'cop',opp:p.from,t:190,score:0,taken:0,phase:'play'};big('🚓 אתה שוטר!',`תפוס את ${p.from}! (התקרב אליו)`,'#58c8ff',3000);return;}
+  if(p.kind==='coop'){if(mission)failMission(null,true);fgSend({a:'go',kind:'coop',from:myNick,to:p.from});mission={id:'getaway',title:'🤝 נהג מילוט',reward:0,stage:'wait',partner:p.from,target:{x:window.__BANK.x,z:window.__BANK.z+6},timer:null,npcs:[]};big('🤝 אתה נהג המילוט!',`${p.from} שודד את הבנק. חכה ברכב ליד הבנק`,'#58c8ff',3500);}}
+function crgUpdate(dt){fg.t-=dt;const mb=$('missionBox');mb.classList.remove('hidden');let txt;
+  if(fg.role==='cop'){const g=oppGhost(),d=g?Math.hypot(g.x-P.x,g.z-P.z):null;if(g)waypoint={x:g.x,z:g.z};txt=`🚓 הגנב במרחק ${d==null?'?':Math.round(d)} מ׳`;if(d!=null&&d<4){fgSend({a:'caught',kind:'crg',from:myNick,to:'*'});endFg('win','🚓 תפסת את הגנב!');return;}if(fg.t<=0){endFg('lose','🏃 הגנב ברח…');return;}}
+  else{let near=null;for(const g of ghosts.values())if(fg.cops.includes(g.nick)){const d=Math.hypot(g.x-P.x,g.z-P.z);if(near==null||d<near)near=d;}txt=`🏃 ${fg.cops.length} שוטרים רודפים${near!=null&&near<30?' · ⚠️ שוטר קרוב!':''}`;if(fg.t<=0){fgSend({a:'escaped',kind:'crg',from:myNick,to:'*'});endFg('win','🏃 ברחת מכולם!');return;}}
+  setH(mb,'mi',`<small>${FGN.crg}</small>${txt} · ⏱️ ${Math.max(0,Math.ceil(fg.t))}`,true);}
+function renderGroupGames(){if(!ghosts.size)return'';return`<div class="item" style="display:block"><b>👥 משחקים לכל החדר</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="pcbtn" data-crg="1">🚓 כולם נגד אחד (אני הגנב)</button><button class="pcbtn" data-hrace="1">🏁 מרוץ בגבעות</button></div><p class="note" style="font-size:12px">🤝 שוד משותף: בחר חבר למטה, אתה השודד והוא נהג המילוט</p></div>`;}
+// ---------- new missions ----------
+MISSIONS.push({id:'jewel',title:'שוד היהלומים',desc:'היכנס לחנות התכשיטים. עבור בין קרני הלייזר בלי לגעת, כבה את החשמל וקח את היהלומים!',reward:0,icon:'💎'},
+  {id:'rescue',title:'חילוץ בגבעות',desc:'מטייל נפצע בגבעות! קח את רכב השטח, מצא אותו והבא אותו לבית החולים.',reward:1400,icon:'🚑'},
+  {id:'witness',title:'עד מוגן',desc:'ליווי עד חשוב לתחנת המשטרה. הכנופיה תנסה לעצור אתכם!',reward:2600,icon:'🕵️'});
+STORY.splice(STORY.indexOf('medic')+1,0,'rescue');STORY.splice(STORY.indexOf('killer')+1,0,'witness');STORY.splice(STORY.indexOf('bank')+1,0,'jewel');
+const JWX=-2940,JWZ=-3000,Z_JEW={id:'jewel',x0:JWX,x1:JWX+14,z0:JWZ,z1:JWZ+10,solids:[]};ZN.push(Z_JEW);
+const JEWB=blocks[(HB-1)*BL+HB],JEW={x:JEWB.ix+10,z:JEWB.iz+21.5},JDOOR={x:JWX+7,z:JWZ+.9};
+const LASERS=[2.4,4.2,6,7.8].map((z,i)=>({z,ph:i*.7,per:rr(2.6,3.4)})),CASES=[[3,3.3],[10.5,5.1],[3.5,6.9],[10,8.7]];let jewelM=null;
+function buildJewel(){const ox=JWX,oz=JWZ,q=Z_JEW,add=(g,m,x,y,z)=>{const o=new THREE.Mesh(g,m);o.position.set(ox+x,y,oz+z);scene.add(o);return o;},S=(x0,z0,x1,z1,h)=>q.solids.push({x0:ox+x0,z0:oz+z0,x1:ox+x1,z1:oz+z1,h}),lam=c=>new THREE.MeshLambertMaterial({color:c,emissive:c,emissiveIntensity:.25});
+  add(new THREE.PlaneGeometry(14,10).rotateX(-Math.PI/2),new THREE.MeshStandardMaterial({color:0x1a1a22,roughness:.2,envMap,emissive:0x0a0a10}),7,.02,5);add(new THREE.PlaneGeometry(14,10).rotateX(Math.PI/2),lam(0x2a2a34),7,3.6,5);
+  for(const [x,z,w,d] of [[7,10.1,14.4,.2],[-.1,5,.2,10],[14.1,5,.2,10],[3.2,-.1,6.4,.2],[10.8,-.1,6.4,.2]]){add(new THREE.BoxGeometry(w,3.6,d),lam(0x3a2a4a),x,1.8,z);S(x-w/2,z-d/2,x+w/2,z+d/2,3.6);}
+  jewelM={cases:[],lasers:[]};for(const [x,z] of CASES){add(new THREE.BoxGeometry(1.2,.9,.8),lam(0x111111),x,.45,z);const gl=add(new THREE.BoxGeometry(1.1,.5,.7),new THREE.MeshStandardMaterial({color:0xcfefff,transparent:true,opacity:.3,metalness:.7,roughness:.05,envMap}),x,1.15,z);
+    const gems=new THREE.Group();for(let i=0;i<4;i++){const g=new THREE.Mesh(new THREE.OctahedronGeometry(.11),new THREE.MeshStandardMaterial({color:pick([0x9fe8ff,0xff5a8a,0x7affb0,0xfff07a]),metalness:.3,roughness:.05,envMap,emissive:0x222222}));g.position.set(-.35+i*.23,0,0);gems.add(g);}gems.position.set(ox+x,1.05,oz+z);scene.add(gems);S(x-.6,z-.4,x+.6,z+.4,1.4);jewelM.cases.push({x:ox+x,z:oz+z,gems,taken:false});}
+  for(const L of LASERS){const m=add(new THREE.BoxGeometry(13.2,.05,.05),new THREE.MeshBasicMaterial({color:0xff1030,transparent:true,opacity:.85}),7,.75,L.z);const m2=add(new THREE.BoxGeometry(13.2,.05,.05),m.material,7,1.35,L.z);jewelM.lasers.push({L,m,m2});}
+  add(new THREE.BoxGeometry(.8,1,.25),lam(0x6a6a6a),12.8,1.5,9.85);jewelM.fuse={x:ox+12.8,z:oz+9.3};const lt=add(new THREE.BoxGeometry(.2,.2,.05),basic(0xff2020),12.8,1.8,9.7);jewelM.fuseL=lt;
+  const sg=ctex(512,128,g=>{g.fillStyle='#2a1a3a';g.fillRect(0,0,512,128);g.fillStyle='#ffd8f0';g.font='bold 60px "Secular One", Assistant, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('💎 תכשיטי היהלום',256,68);});
+  const s2=new THREE.Mesh(new THREE.PlaneGeometry(7,1.75),new THREE.MeshBasicMaterial({map:sg,side:THREE.DoubleSide}));s2.position.set(JEW.x,4.2,JEW.z-2.2);scene.add(s2);}
+const laserOn=(L)=>((time+L.ph)%L.per)<L.per*.55;
+function hikerSpot(){for(let i=0;i<200;i++){const x=rr(HX0+80,-100),z=rr(HZ0+80,HZ1-80);if(!nearRoad(x,z,35)&&!inLake(x,z)&&D2(x,z,LKX,LKZ)>(LKR+15)**2&&hillH(x,z)>5&&!zoneHit(Z_HILL,x,z))return{x,z};}return{x:-300,z:-300};}
+function moreStart(id,m){const base={id,title:m.title,reward:m.reward,timer:null,npcs:[]};
+  if(id==='jewel'){mission=Object.assign(base,{stage:'go',target:JEW,cash:0});return true;}
+  if(id==='rescue'){const lp=randomLane(P.x,P.z,8,40,200)||farLane(10,80)||{x:P.x+4,z:P.z,dir:0},c=mkCar(lp.x,lp.z,DIRA[lp.dir],'pickup',0x3a5a2a);c.persist=true;c.fuel=100;cars.push(c);const s=hikerSpot(),hk=npc(s.x,s.z,{shirt:0xff7a00,pants:0x3a4a2a,hairStyle:'short',hatT:'cap',hatC:0xff7a00},'injured');mission=Object.assign(base,{cab:c,hk,npcs:[hk],stage:'go',target:hk,timer:240});line('📻 קשר','מטייל נפל בגבעות ונפצע! רכב שטח מחכה לך. מהר!');return true;}
+  if(id==='witness'){const s=randomWalk(POLICE.x,POLICE.z,170,260,300)||spotNear(P.x,P.z,60,120),w=npc(s.x,s.z,{shirt:0xeeeeee,jacket:0x5a4a3a,pants:0x2a2a2a,hairStyle:'bald',beard:true});w.hp=70;mission=Object.assign(base,{w,npcs:[w],stage:'find',target:w,d0:0,ambush:0});return true;}
+  return false;}
+function moreEnd(M){if(!M)return;if(M.jin){M.jin=false;P.x=JEW.x;P.z=JEW.z+2;}if(M.coop&&!M.paid)fgSend({a:'fail',kind:'coop',from:myNick,to:M.coop});if(jewelM&&M.id==='jewel')for(const c of jewelM.cases){c.taken=false;c.gems.visible=true;}}
+function moreUpdate(M,dt){const pp=me(),foot=!P.car&&!P.boat&&!P.plane;
+  if(M.id==='jewel'){
+    if(M.stage==='go'){M.status='סע לחנות התכשיטים 💎 והיכנס פנימה';if(foot&&D(pp,JEW)<3)bankFade('💎 נכנס לחנות…',()=>{P.x=JDOOR.x;P.z=JDOOR.z+.9;P.a=Math.PI/2;cam.yaw=Math.PI/2;cam.x=P.x;cam.z=P.z-2.5;cam.y=2;M.jin=true;M.stage='in';M.off=0;M.alarm=0;line('🤫 אתה','השומר בהפסקה. לא לגעת בלייזרים האדומים…');});return true;}
+    if(M.stage==='in'||M.stage==='out'){const J=jewelM;M.off=Math.max(0,M.off-dt);
+      for(const o of J.lasers){const on=!M.off&&laserOn(o.L);o.m.visible=o.m2.visible=on;if(on&&!M.alarm&&Math.abs(P.z-(JWZ+o.L.z))<.32&&P.x>JWX+.4&&P.x<JWX+13.6){M.alarm=1;M.alarmT=25;sfx('fail');cam.shake=.2;big('🚨 נגעת בלייזר!','האזעקה הופעלה! קח מה שאפשר וצא תוך 25 שניות','#ff3d7f',2800);}}
+      J.fuseL.material.color.setHex(M.off?0x30ff60:0xff2020);
+      if(!M.off&&!M.fuseUsed&&D(pp,J.fuse)<1.3){M.off=22;M.fuseUsed=1;sfx('pickup');toast('🔌 כיבית את החשמל! הלייזרים כבויים ל-22 שניות');}
+      for(const c of J.cases)if(!c.taken&&D(pp,c)<1.4){c.taken=true;c.gems.visible=false;const v=Math.round(rr(1800,3500)/50)*50;M.cash+=v;sfx('cash');toast(`💎 +${money(v)}`);}
+      const left=J.cases.filter(c=>!c.taken).length;if(M.alarm){M.alarmT-=dt;if(M.alarmT<=0){failMission('🚔 נתפסת בתוך החנות!');return true;}}
+      M.target=left?null:{x:JDOOR.x,z:JDOOR.z};M.status=M.alarm?`🚨 צא מהר! ${Math.ceil(M.alarmT)} שנ׳ · ${money(M.cash)}`:left?`💎 ${4-left}/4 ויטרינות · ${M.off?`⚡ חשמל כבוי ${Math.ceil(M.off)} שנ׳`:'🔌 קופסת החשמל בפינה האחורית'}`:`💎 ${money(M.cash)} · צא מהדלת 🚪`;
+      if(D(pp,JDOOR)<1.2&&M.cash>0)bankFade('🏃 יוצא מהחנות…',()=>{M.jin=false;P.x=JEW.x;P.z=JEW.z+2;M.stage='escape';M.target=HIDE;M.timer=200;heat=Math.max(heat,M.alarm?16:4);lastCrime=time;big('💎 יצאת עם היהלומים!',`${money(M.cash)} · ברח למחבוא הצהוב`,'#6dff9e',3000);});return true;}
+    if(M.stage==='escape'){M.status=`💎 ${money(M.cash)} · ברח למחבוא!`;if(D(pp,HIDE)<9){M.reward=M.cash;if(DL)DL.jewel=M.cash;heat=0;successMission();}return true;}return true;}
+  if(M.id==='rescue'){const c=M.cab;if(M.stage==='go'){const hk=M.hk;if(hk.state==='dead'){failMission('המטייל לא שרד');return true;}M.status=P.car?`סע אל המטייל הפצוע 🏔️ (${Math.round(D(pp,hk))} מ׳)`:'קח רכב (רכב שטח מחכה לך)';if(D(pp,hk)<60&&R()<dt*.3)showBubble(hk,'🆘 עזרה! כאן!',null,null,2.5);
+      if(P.car&&D(P.car,hk)<9&&Math.abs(P.car.v)<2.5){dropNpc(M,hk);M.hk=null;M.stage='hosp';M.target={x:HOSPITAL.x,z:HOSPITAL.z-2};line('🥾 מטייל','תודה… חשבתי שאף אחד לא יבוא. הרגל שלי… 😣');sfx('pickup');}return true;}
+    M.status=P.car?'סע לבית החולים 🏥':'חזור לרכב!';if(P.car&&D(P.car,M.target)<14&&Math.abs(P.car.v)<2.5){line('👩‍⚕️ רופאה','הבאת אותו בזמן! הוא יהיה בסדר 💚');successMission();}return true;}
+  if(M.id==='witness'){const w=M.w;if(w&&w.state==='dead'){failMission('העד נהרג 😢');return true;}
+    if(M.stage==='find'){M.status='לך לבית המסתור ואסוף את העד';if(D(pp,w)<3){w.state='follow';M.stage='go';M.target=POLICE;M.d0=D(w,POLICE);line('🕵️ עד','אתה השוטר שנשלח? יופי. הם מחפשים אותי… בוא נזוז מהר.');}return true;}
+    const inCar=M.inCar,ref=inCar?P.car:w;if(inCar&&!P.car){const sd=P.a+Math.PI/2;const n=npc(P.x+Math.cos(sd)*1.5,P.z+Math.sin(sd)*1.5,{shirt:0xeeeeee,jacket:0x5a4a3a,pants:0x2a2a2a,hairStyle:'bald',beard:true},'follow');n.hp=M.whp||70;M.w=n;M.npcs.push(n);M.inCar=false;return true;}
+    if(!inCar&&P.car&&D(P.car,w)<7&&Math.abs(P.car.v)<2.5){M.whp=w.hp;dropNpc(M,w);M.w=null;M.inCar=true;toast('🕵️ העד עלה לרכב');return true;}
+    const d=D(ref||pp,POLICE);M.status=inCar?`סע לתחנת המשטרה 🚔 (${Math.round(d)} מ׳)`:`הובל את העד לתחנת המשטרה 🚔 (${Math.round(d)} מ׳)`;
+    if(!M.ambush&&d<M.d0*.6){M.ambush=1;line('🕵️ עד','שם! אנשים של הכנופיה! 😱');for(let i=0;i<3;i++){const q=randomWalk(pp.x,pp.z,14,26,60);if(q){const g=mkPed(q.x,q.z,'gang');g.state='hostile';peds.push(g);}}}
+    if(inCar?(D(P.car,POLICE)<16&&Math.abs(P.car.v)<2.5):D(w,POLICE)<6){line('👮 מפקד','העד הגיע בשלום. עבודה מצוינת!');successMission();}return true;}
+  if(M.id==='getaway'){if(M.stage==='wait'){M.status=`🚗 חכה ברכב ליד הבנק · ${M.partner} שודד`;return true;}let g=null;for(const x of ghosts.values())if(x.nick===M.partner)g=x;if(g)M.target={x:g.x,z:g.z};const d=g?Math.round(Math.hypot(g.x-P.x,g.z-P.z)):null;M.status=`🤝 לווה את ${M.partner} למחבוא${d!=null?` · ${d} מ׳`:''}${d>80?' ⚠️ אתה רחוק!':''}`;lastCrime=Math.max(lastCrime,time-5);return true;}
+  return false;}
+function moreRender(H){if(H.type==='apt')return renderApt(H);if(H.type==='heli')return renderPads(H);return null;}
+function moreClick(t){const d=t.dataset;if(d.aptbuy){const a=APTS.find(x=>x.id===d.aptbuy);if(!a||ownApt(a.id)||P.money<a.price)return true;P.money-=a.price;stats.apts=(stats.apts||[]).concat(a.id);save();sfx('win');big('🏠 קנית דירה!',`${a.n} · ${money(a.inc)} כל יום`,'#6dff9e',2800);renderMenu();return true;}
+  if(d.heli!=null&&d.heli!==undefined&&t.hasAttribute('data-heli')){const H=hubInfo(tab.slice(4)),to=PADS[+d.heli];if(H&&to&&P.money>=250)heliFly(H.pad,to);return true;}
+  if(d.crg){crgInvite();return true;}if(d.hrace){closeMenu();hillsRace();return true;}return false;}
+function buildMore(){FGN.crg='🚓 כולם נגד הגנב';FGN.coop='🤝 שוד משותף';buildFuel();buildApts();buildPads();buildLake();buildJewel();}
 /* ============ accidents & arguments ============ */
 function crashFight(a,b,imp){const pl=a===P.car||b===P.car;
   if(pl){const o=a===P.car?b:a;if(o.driver==='ai'&&imp>10&&R()<.6){const q=ejectDriver(o,false,false);q.state='fight';q.fightT=15;say(q,'fight',true);}}
@@ -3268,16 +3412,16 @@ const FGN={cr:'🚓 שוטרים וגנבים',hs:'🙈 מחבואים',pb:'🔫
 function fgSend(m){m.k='fg';rtcBroadcast(m);if(room){try{room.emit('fg',m).catch(()=>{});}catch(e){}}}
 function oppGhost(){if(!fg)return null;for(const g of ghosts.values())if(g.nick===fg.opp)return g;return null;}
 function inviteFg(kind,g){if(fg){toast('כבר יש משחק פעיל');return;}fgSend({a:'inv',kind,from:myNick,to:g.nick});closeMenu();toast(`📨 הזמנת את ${g.nick} ל${FGN[kind]}`);}
-function onFg(m){if(!m||m.to!==myNick)return;const from=String(m.from||'חבר').slice(0,14),kind=m.kind;if(!FGN[kind])return;
+function onFg(m){if(!m||(m.to!==myNick&&m.to!=='*'))return;if(fgExtra(m))return;const from=String(m.from||'חבר').slice(0,14),kind=m.kind;if(!FGN[kind])return;
   if(m.a==='inv'){pendingFg={kind,from};raceInvite=null;$('invT').textContent=`${FGN[kind]} · ${from} מזמין אותך!`;$('invite').classList.add('show');setTimeout(()=>$('invite').classList.remove('show'),15000);}
   else if(m.a==='go')startFg(kind,from,true);
   else if(m.a==='tag'&&fg)endFg(fg.role==='cop'||fg.role==='seek'?'win':'lose',fg.kind==='cr'?'🚓 השוטר תפס את הגנב!':'🙈 המחפש מצא את המתחבא!');
   else if(m.a==='pbend'&&fg&&fg.kind==='pb'){fg.oppScore=+m.score||0;}}
-function acceptFg(){const p=pendingFg;pendingFg=null;$('invite').classList.remove('show');if(!p)return;fgSend({a:'go',kind:p.kind,from:myNick,to:p.from});startFg(p.kind,p.from,false);}
+function acceptFg(){const p=pendingFg;pendingFg=null;$('invite').classList.remove('show');if(!p)return;if(p.kind==='crg'||p.kind==='coop'){fgAccept2(p);return;}fgSend({a:'go',kind:p.kind,from:myNick,to:p.from});startFg(p.kind,p.from,false);}
 function startFg(kind,opp,inviter){const role=kind==='cr'?(inviter?'cop':'rob'):kind==='hs'?(inviter?'seek':'hide'):'pb';fg={kind,opp,role,t:kind==='cr'?180:kind==='hs'?195:120,score:0,taken:0,phase:kind==='hs'?'hide':'play'};
   const intro={cop:'🚓 אתה השוטר! תפוס את הגנב (התקרב אליו)',rob:'🏃 אתה הגנב! ברח 3 דקות',seek:'🙈 אתה מחפש! עוצם עיניים ל-45 שניות…',hide:'🙈 אתה מתחבא! יש לך 45 שניות להתחבא',pb:'🔫 פיינטבול! מי שפוגע יותר ב-2 דקות מנצח'}[role];big(FGN[kind],intro,'#58c8ff',3500);if(role==='seek'){P.freeze=true;$('fade').classList.add('show');$('fadeT').textContent='🙈 סופר עד 45…';}}
 function endFg(res,why){if(!fg)return;P.freeze=false;$('fade').classList.remove('show');waypoint=null;const win=res==='win';if(win){P.money+=500;addXP(50);sfx('win');}else sfx('fail');big(win?'🏆 ניצחת!':res==='tie'?'🤝 תיקו!':'😅 הפסדת',why+(win?' · +$500':''),win?'#6dff9e':'#ff3d7f',3500);fg=null;}
-function updFg(dt){if(!fg)return;fg.t-=dt;const g=oppGhost(),d=g?Math.hypot(g.x-P.x,g.z-P.z):null,mb=$('missionBox');mb.classList.remove('hidden');let txt='';
+function updFg(dt){if(!fg)return;if(fg.kind==='crg'){crgUpdate(dt);return;}fg.t-=dt;const g=oppGhost(),d=g?Math.hypot(g.x-P.x,g.z-P.z):null,mb=$('missionBox');mb.classList.remove('hidden');let txt='';
   if(fg.kind==='hs'&&fg.phase==='hide'&&fg.t<=150){fg.phase='play';P.freeze=false;$('fade').classList.remove('show');toast('🙈 מוכן או לא, אני בא!');}
   if(fg.kind==='cr'){if(fg.role==='cop'){if(g)waypoint={x:g.x,z:g.z};txt=`🚓 הגנב במרחק ${d==null?'?':Math.round(d)} מ׳`;if(d!=null&&d<4){fgSend({a:'tag',kind:'cr',from:myNick,to:fg.opp});endFg('win','🚓 תפסת את הגנב!');return;}}else txt=`🏃 ברח! ${d!=null&&d<30?'⚠️ השוטר קרוב!':''}`;}
   else if(fg.kind==='hs'){if(fg.phase==='hide')txt=fg.role==='hide'?`🙈 תתחבא! עוד ${Math.ceil(fg.t-150)} שנ׳`:`🙈 סופר… ${Math.ceil(fg.t-150)}`;else if(fg.role==='seek'){txt=d==null?'?':d<15?'🔥🔥 חם מאוד!':d<40?'🔥 חם':d<90?'🙂 פושר':'❄️ קר';if(d!=null&&d<4){fgSend({a:'tag',kind:'hs',from:myNick,to:fg.opp});endFg('win','🙈 מצאת אותו!');return;}}else txt=`🤫 אל תזוז… ${d!=null&&d<20?'הוא קרוב!':''}`;}
@@ -3285,7 +3429,7 @@ function updFg(dt){if(!fg)return;fg.t-=dt;const g=oppGhost(),d=g?Math.hypot(g.x-
   setH(mb,'mi',`<small>${FGN[fg.kind]} · מול ${fg.opp}</small>${txt} · ⏱️ ${Math.max(0,Math.ceil(fg.t))}`,true);
   if(fg.t<=0){if(fg.kind==='cr')endFg(fg.role==='rob'?'win':'lose',fg.role==='rob'?'🏃 ברחת מהשוטר!':'🏃 הגנב ברח…');else if(fg.kind==='hs')endFg(fg.role==='hide'?'win':'lose',fg.role==='hide'?'🤫 לא מצאו אותך!':'🙈 לא מצאת אותו…');else endFg(fg.score>fg.taken?'win':fg.score<fg.taken?'lose':'tie',`${fg.score} מול ${fg.taken}`);}}
 function paintSplat(){const f=$('flash');f.style.background=pick(['#ff3d7f','#58c8ff','#6dff9e','#ffd23a']);f.classList.remove('go');void f.offsetWidth;f.classList.add('go');setTimeout(()=>f.style.background='#fff',500);}
-function renderFriendGames(){const gs=[...ghosts.values()].filter(g=>g.nick);if(!gs.length)return`<p class="note">🎮 כשחבר מחובר, יופיעו כאן משחקים איתו</p>`;return`<p class="note"><b>🎮 משחקים עם חבר</b></p>`+gs.map(g=>`<div class="item" style="display:block"><b>${String(g.nick).replace(/[<>&"]/g,'')}</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${Object.keys(FGN).map(k=>`<button class="pcbtn" data-fginv="${k}" data-fgto="${g.peer}">${FGN[k]}</button>`).join('')}</div></div>`).join('');}
+function renderFriendGames(){const gs=[...ghosts.values()].filter(g=>g.nick);if(!gs.length)return`<p class="note">🎮 כשחבר מחובר, יופיעו כאן משחקים איתו</p>`;return`<p class="note"><b>🎮 משחקים עם חבר</b></p>`+gs.map(g=>`<div class="item" style="display:block"><b>${String(g.nick).replace(/[<>&"]/g,'')}</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${Object.keys(FGN).filter(k=>k!=='crg').map(k=>`<button class="pcbtn" data-fginv="${k}" data-fgto="${g.peer}">${FGN[k]}</button>`).join('')}</div></div>`).join('');}
 /* ============ restaurant ============ */
 const DISH={'🍔':['🍞','🥩','🧀','🍞'],'🌭':['🌭','🥫'],'🍕':['🫓','🍅','🧀'],'🥗':['🥬','🍅','🥒'],'🍟':['🥔','🧂'],'🌮':['🫓','🥩','🥬']};const INGR=['🍞','🥩','🧀','🌭','🥫','🫓','🍅','🥬','🥒','🥔','🧂'];
 let resto=null,restoOwned=false;
@@ -3518,7 +3662,7 @@ function updateDrive(dt){
   if(c.air){thr=0;steer=0;hb=false;}
   if(c.nitro){c.nitroT=Math.max(0,(c.nitroT||0)-dt);if((keys.KeyN||c.nitroReq)&&c.nitroT<=0&&!(c.boost>0)){c.boost=2.5;c.nitroT=9;sfx('crash',.6);cam.shake=.25;}c.nitroReq=false;}
   const mx0=c.max;if(c.boost>0){c.boost-=dt;c.max=mx0*1.3;c.v+=c.acc*1.5*dt;for(const sz of [1,-1])part(true,c.x-Math.cos(c.a)*c.w/2+Math.cos(c.a+Math.PI/2)*sz*.4,.5,c.z-Math.sin(c.a)*c.w/2+Math.sin(c.a+Math.PI/2)*sz*.4,-Math.cos(c.a)*6,0,-Math.sin(c.a)*6,.25,.3,pick([0x58c8ff,0xff9a3c]),0);}
-  physCar(c,dt,thr,steer,hb);c.max=mx0;P.x=c.x;P.z=c.z;P.a=c.a;stats.km+=Math.abs(c.v)*dt/1000;if(stats.km>=100)unlock('km100');
+  if(c.fuel!=null&&c.fuel<=0&&thr>0)thr=0;physCar(c,dt,thr,steer,hb);c.max=mx0;P.x=c.x;P.z=c.z;P.a=c.a;stats.km+=Math.abs(c.v)*dt/1000;if(stats.km>=100)unlock('km100');
   if(!c.air){let on=false;for(const r of ramps){const dx=c.x-r.x,dz=c.z-r.z,al=dx*r.dx+dz*r.dz,lat=-dx*r.dz+dz*r.dx;if(Math.abs(lat)<2.1&&al>-3&&al<3.2){on=true;if(Math.cos(c.a)*r.dx+Math.sin(c.a)*r.dz>.65&&c.v>5){c.alt=clamp((al+3)/6,0,1)*1.3;c.ramp=true;if(al>2.6){c.air=true;c.vy=c.v*.32;c.airT=0;}}break;}}if(!on&&c.ramp&&!c.air){c.ramp=false;c.alt=0;}}
   else{c.vy-=18*dt;c.alt+=c.vy*dt;c.airT+=dt;if(c.alt<=0){c.alt=0;c.air=false;c.ramp=false;cam.shake=.35;sfx('crash',.6);if(c.airT>1.1){const bonus=Math.round(c.airT*180);P.money+=bonus;stats.stunts++;addXP(10);if(stats.stunts>=10)unlock('stunt10');big('קפיצה מטורפת!',`${c.airT.toFixed(1)} שניות באוויר · +$${bonus}`,'#ff9a3c',2300);sfx('win');}}}
   if(hb&&Math.abs(c.v)>12&&R()<.5){for(const sz of [1,-1])part(false,c.x-Math.cos(c.a)*c.w*.35+Math.cos(c.a+Math.PI/2)*sz*.8,.25,c.z-Math.sin(c.a)*c.w*.35+Math.sin(c.a+Math.PI/2)*sz*.8,rr(-.5,.5),rr(.3,1),rr(-.5,.5),.9,.35,0xbbbbbb,2.5);}
@@ -3783,7 +3927,7 @@ function drawBigMap(){
   if(tg){const pts=gpsPath(me(),tg);g.strokeStyle=mission?'#ffd23a':'#c77dff';g.lineWidth=5;g.lineJoin='round';g.lineCap='round';g.beginPath();pts.forEach((p,i)=>{const [sx,sy]=w2s(p.x,p.z);i?g.lineTo(sx,sy):g.moveTo(sx,sy);});g.stroke();}
   const icon=(e,x,z,sz)=>{const [sx,sy]=w2s(x,z);if(sx<-20||sy<-20||sx>W+20||sy>H+20)return;g.font=`${sz}px sans-serif`;g.fillText(e,sx,sy);};
   const sc=clamp(mapZ,1,4);
-  for(const h of HUBS)icon(h.icon,h.x,h.z,14+sc*3);drawPlacesBig(g,w2s,W,H);icon('🚡',LIFT.x0+6,LIFT.z-6,14+sc*3);icon('🗽',Z_LIB.cx,Z_LIB.cz,16+sc*3);
+  for(const h of HUBS)icon(h.icon,h.x,h.z,14+sc*3);for(const f of FUELS)icon('⛽',f.x,f.z,12+sc*3);drawPlacesBig(g,w2s,W,H);icon('🚡',LIFT.x0+6,LIFT.z-6,14+sc*3);icon('🗽',Z_LIB.cx,Z_LIB.cz,16+sc*3);
   if(personalPlane&&P.plane!==personalPlane)icon('✈️',personalPlane.x,personalPlane.z,16+sc*2);if(personalBoat&&P.boat!==personalBoat)icon('🚤',personalBoat.x,personalBoat.z,16+sc*2);
   for(const gh of ghosts.values()){const [sx,sy]=w2s(gh.x,gh.z);g.fillStyle='#6dff9e';g.beginPath();g.arc(sx,sy,7,0,6.283);g.fill();g.font='800 13px Assistant, sans-serif';g.lineWidth=3;g.strokeStyle='#000';g.strokeText(gh.nick,sx,sy-14);g.fillStyle='#fff';g.fillText(gh.nick,sx,sy-14);}
   icon('🏥',HOSPITAL.x,HOSPITAL.z+10,14+sc*3);icon('🏎️',COUNTER.x,COUNTER.z,14+sc*3);icon('💰',SELL.x,SELL.z,10+sc*2);
@@ -3828,7 +3972,7 @@ const hc={};function setH(el,k,v,html){if(hc[k]===v)return;hc[k]=v;if(html)el.in
 function updHUD(){updTalkUI(1/60);
   setH($('money'),'m','$'+Math.floor(P.money));{const l=lvlOf(xp),a=120*(l-1)*(l-1),b=120*l*l;setH($('lvl'),'lv',`⭐ רמה ${l} <span style="display:inline-block;width:60px;height:6px;background:rgba(0,0,0,.6);border-radius:3px;vertical-align:middle"><span style="display:block;height:100%;width:${Math.round((xp-a)/(b-a)*100)}%;background:#ffd23a;border-radius:3px"></span></span>`,true);}const s=stars();let st='';for(let i=0;i<5;i++)st+=`<span class="${i<s?'on':''}">★</span>`;setH($('stars'),'s',st,true);$('stars').classList.toggle('flash',s>0&&time-lastCrime<6);
   $('hpBar').style.width=Math.max(0,P.hp)+'%';$('fdBar').style.width=Math.max(0,P.food==null?100:P.food)+'%';$('arBar').style.width=Math.max(0,P.armor)+'%';
-  let wt;if(P.para)wt='🪂 צניחה';else if(P.train)wt='🚝 ברכבת';else if(P.plane)wt=`✈️ ${PLANES[P.plane.type].name}`;else if(P.boat)wt=`🚤 ${BOATS[P.boat.type].name}`;else if(P.skiing)wt='🎿 גלישה';else if(P.car)wt=`🚗 ${CT[P.car.type].name} · ${Math.max(0,Math.round(P.car.hp/P.car.maxhp*100))}%`;else{const w=P.weapons[P.wi],W=WEAP[w.id];wt=`${W.icon} ${W.name}${W.melee?'':' · '+w.ammo}`;}setH($('weapon'),'w',wt);
+  let wt;if(P.para)wt='🪂 צניחה';else if(P.train)wt='🚝 ברכבת';else if(P.plane)wt=`✈️ ${PLANES[P.plane.type].name}`;else if(P.boat)wt=`🚤 ${BOATS[P.boat.type].name}`;else if(P.skiing)wt='🎿 גלישה';else if(P.car)wt=`🚗 ${CT[P.car.type].name} · ${Math.max(0,Math.round(P.car.hp/P.car.maxhp*100))}%${P.car.fuel!=null?' · ⛽'+Math.round(P.car.fuel)+'%':''}`;else{const w=P.weapons[P.wi],W=WEAP[w.id];wt=`${W.icon} ${W.name}${W.melee?'':' · '+w.ammo}`;}setH($('weapon'),'w',wt);
   const sp=$('speedo'),vv=P.car||P.boat||P.plane;if(vv||P.skiing){sp.classList.remove('hidden');const kmh=Math.round(Math.abs(vv?vv.v:P.sv)*3.6);setH(sp,'sp',`${kmh}<small>${P.plane?`קמ״ש · גובה ${Math.round(P.plane.y-groundY(P.plane.x,P.plane.z))} מ׳ · גז ${Math.round(P.plane.thr*100)}%`:P.skiing&&P.runOn?'קמ״ש · ⏱️ '+fmtT(P.runT):'קמ״ש'}</small>`,true);}else sp.classList.add('hidden');
   {const on=$('online');const nOn=ghosts.size+1;if(nOn>1){on.classList.remove('hidden');setH(on,'on',`🌐 ${nOn} שחקנים מחוברים`);}else if(room&&onlineN>1){on.classList.remove('hidden');setH(on,'on',`🌐 ${onlineN} שחקנים מחוברים`);}else on.classList.add('hidden');}
   const rd=$('radio');if(P.car&&radioSt){rd.classList.remove('hidden');setH(rd,'rd',STATIONS[radioSt].name);}else rd.classList.add('hidden');
@@ -3911,7 +4055,7 @@ seedAccounts();
 $('play').addEventListener('click',()=>{if(!curUser)return;myNick=($('nick').value||'').trim().slice(0,14)||'שחקן '+(1+Math.floor(R()*99));try{localStorage.setItem('ir-nick',myNick);}catch(e){}initAudio();started=true;$('start').classList.add('hidden');
   if(!isTouch&&cv.requestPointerLock){try{const pr=cv.requestPointerLock();if(pr&&pr.catch)pr.catch(()=>{});}catch(e){}}
   setTimeout(()=>toast('💻 המחשב הכחול לידך: משימות וחנות נשק'),700);setTimeout(()=>toast('🏎️ רכב ספורט ורוד מחכה לך ליד בית החולים'),3500);});
-buildHills();buildBankHall();
+buildHills();buildBankHall();buildMore();
 requestAnimationFrame(loop);
 })();
 </script>
