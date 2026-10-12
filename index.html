@@ -1344,7 +1344,7 @@ function renderMenu(){const el=$('pcbody');let h='';document.querySelectorAll('.
   const hub=tab.startsWith('hub:');document.querySelector('.tabs').style.display=hub?'none':'';document.querySelector('.pctop h2').textContent=hub?hubInfo(tab.slice(4)).title:'💻 מחשב העיר';
   if(hub){el.innerHTML=renderHub(tab.slice(4));return;}
   if(tab==='m'){if(mission)h+=`<div class="item"><div class="ic">⏳</div><div class="tx"><b>${mission.title}</b><p>המשימה פעילה עכשיו.</p></div><button class="pcbtn red" data-cancel>בטל משימה</button></div>`;
-    h+=renderStory();}
+    h+=renderMissions2();}
   else if(tab==='a'){h+=renderAch();}
   else if(tab==='g'){h+=renderOnline();if(!garage.length)h+=`<p class="note">עוד אין לך רכבים משלך.<br>בקר בסוכנות היוקרה 🏎️ (מסומנת בזהב במפה) כדי לקנות.</p>`;
     else garage.forEach((e,i)=>{const t=CT[e.k]||PLANES[e.k]||BOATS[e.k],nn=(NEONS.find(n=>n[0]===e.neon)||[0,''])[1];h+=`<div class="item"><div class="ic"><span style="display:inline-block;width:30px;height:30px;border-radius:50%;background:#${e.col.toString(16).padStart(6,'0')};border:2px solid #fff"></span></div><div class="tx"><b>${t.name}</b><p>${t.tag}${e.neon?' · ניאון '+nn:''}</p></div><button class="pcbtn" data-call="${i}">הזמן לכאן</button></div>`;});}
@@ -1592,7 +1592,7 @@ function renderCheckin(){const c=checkin,D0=DEST[c.dest];const st=[['🧳','צ׳
   let h=`<div class="pass"><b>🎫 כרטיס עלייה למטוס</b><span>${myNick||'נוסע'} · אל ${D0.icon} ${D0.name}</span><span>שער ${c.gate} · מושב ${c.seat} · $${tripPrice(c.dest,'air')}</span></div>`;
   st.forEach((s,i)=>{const done=i<c.step,cur=i===c.step;h+=`<div class="item" style="opacity:${i>c.step?.45:1}"><div class="ic">${done?'✅':s[0]}</div><div class="tx"><b>${s[1]}</b><p>${done?c.msg[i]:s[2]}</p></div>${cur?`<button class="pcbtn" data-ck="1">${s[3]}</button>`:''}</div>`;});
   return h+`<button class="pcbtn red" data-ckx="1" style="width:100%;margin-top:6px">בטל טיסה</button>`;}
-function hubClick(t){const d=t.dataset;if(storyClick(t))return true;if(moreClick(t))return true;if(p9Click(t))return true;if(p8Click(t))return true;if(rtcClick(t))return true;if(extraHubClick(t))return true;if(extraHubClick2(t))return true;
+function hubClick(t){const d=t.dataset;if(replayClick(t))return true;if(moreClick(t))return true;if(p9Click(t))return true;if(p8Click(t))return true;if(rtcClick(t))return true;if(extraHubClick(t))return true;if(extraHubClick2(t))return true;
   if(d.fly){if(P.money<tripPrice(d.fly,'air'))return true;checkin={dest:d.fly,step:0,msg:[],gate:1+((R()*12)|0),seat:(10+((R()*25)|0))+'ABCDEF'[(R()*6)|0],beep:false,beeped:false};renderMenu();return true;}
   if(d.ckx){checkin=null;renderMenu();return true;}
   if(d.ck){const c=checkin;if(!c)return true;
@@ -1647,7 +1647,7 @@ function startTrip(dest,mode,priv){
   P.money-=price;closeMenu();if(priv&&personalPlane&&P.plane!==personalPlane){removeVeh(personalPlane);personalPlane=null;}
   const arr=mode==='air'?D0.arrAir:D0.arrSea;
   const arrive=()=>{P.gear=null;P.skiing=false;P.x=arr[0];P.z=arr[1];P.y=0;P.sv=0;heat=0;for(const h of HUBS)h.cool=true;for(const c of computers)c.cool=true;cam.x=P.x-5;cam.z=P.z;cam.y=groundY(P.x,P.z)+3;cam.yaw=0;
-    if(!visited.includes(dest)){visited.push(dest);addXP(80);if(visited.length>=8)unlock('world');}if(mode==='air')unlock('fly1');if(priv)deliverPlane(pl);big(`ברוך הבא ל${D0.name}!`,D0.icon,'#58c8ff',2600);save();};
+    if(!visited.includes(dest)){visited.push(dest);addXP(80);gemsInit();stats.gems=(stats.gems||0)+1;save();setTimeout(()=>big('💎 קיבלת יהלום!','על ביקור ראשון במדינה חדשה. אפשר לשחק איתו שוב במשימה','#9fe8ff',3200),3500);if(visited.length>=8)unlock('world');}if(mode==='air')unlock('fly1');if(priv)deliverPlane(pl);big(`ברוך הבא ל${D0.name}!`,D0.icon,'#58c8ff',2600);save();};
   if(mode==='air'){const type=priv?pl.k:'jet',col=priv?pl.col:0x1747c9,sc=priv?1:2.2;
     const fd=Math.max(D0.flight||8,F.flight||0);playCine(cineTakeoff(F.air,type,col,sc,`✈️ ממריאים אל ${D0.name}`,()=>playCine(cineCruise(type,col,sc,fd,D0,()=>playCine(cineLanding(D0.air,type,col,sc,`🛬 נוחתים ב${D0.name}`,arrive))))));}
   else playCine(cineSail(F.sea,`⛴️ מפליגים אל ${D0.name}`,()=>playCine(cineDock(D0.sea,`⚓ מגיעים ל${D0.name}`,arrive))));
@@ -2700,7 +2700,6 @@ const STORY=['delivery','taxi','thief','pizza','race','lostkid','medic','school'
 function storyList(){const ids=MISSIONS.map(m=>m.id).filter(i=>i!=='zombie'),L=STORY.filter(i=>ids.includes(i));for(const i of ids)if(!L.includes(i))L.push(i);return L;}
 function storyCur(){return storyList()[stats.story||0]||null;}
 function storyNext(){stats.story=(stats.story||0)+1;save();const n=storyCur(),m=MISSIONS.find(x=>x.id===n);if(m)setTimeout(()=>toast(`📖 המשימה הבאה: ${m.icon} ${m.title} (במחשב הכחול)`),3200);}
-function storyDone(id){if(id&&id===storyCur())storyNext();}
 function renderStory(){const L=storyList(),i=Math.min(stats.story||0,L.length),N=L.length,esc=x=>String(x).replace(/[<>&"]/g,'');
   let h=`<div class="item" style="display:block"><b>📖 הסיפור: משימה ${Math.min(i+1,N)} מתוך ${N}</b><div style="height:10px;background:rgba(255,255,255,.12);border-radius:6px;margin:8px 0;overflow:hidden"><div style="height:100%;width:${Math.round(i/N*100)}%;background:linear-gradient(90deg,#6dff9e,#58c8ff)"></div></div></div>`;
   if(i>=N){h+=`<p class="note">🏆 סיימת את כל המשימות בסיפור! אפשר לשחק בכל משימה שוב:</p>`;for(const m of MISSIONS)h+=`<div class="item"><div class="ic">${m.icon}</div><div class="tx"><b>${esc(m.title)}</b><p>${esc(m.desc)}</p><span class="pr">+$${m.reward}</span></div><button class="pcbtn" data-mission="${m.id}" ${mission?'disabled':''}>שחק</button></div>`;return h;}
@@ -2961,6 +2960,17 @@ function moreClick(t){const d=t.dataset;if(d.aptbuy){const a=APTS.find(x=>x.id==
   if(d.heli!=null&&d.heli!==undefined&&t.hasAttribute('data-heli')){const H=hubInfo(tab.slice(4)),to=PADS[+d.heli];if(H&&to&&P.money>=250)heliFly(H.pad,to);return true;}
   if(d.crg){crgInvite();return true;}if(d.hrace){closeMenu();hillsRace();return true;}return false;}
 function buildMore(){FGN.crg='🚓 כולם נגד הגנב';FGN.coop='🤝 שוד משותף';buildFuel();buildApts();buildPads();buildLake();buildJewel();}
+
+// --- missions: free choice, each once; a diamond buys a replay; all reopen when everything is done
+function gemsInit(){if(stats.gemInit==null){stats.gemInit=1;stats.gems=(stats.gems||0)+visited.filter(d=>d!=='home').length;stats.done=stats.done||[];save();}}
+function missionList(){return MISSIONS.filter(m=>m.id!=='zombie');}
+function renderMissions2(){gemsInit();const L=missionList(),done=stats.done||[],N=L.length,n=L.filter(m=>done.includes(m.id)).length,g=stats.gems||0,esc=x=>String(x).replace(/[<>&"]/g,'');
+  let h=`<div class="item" style="display:block"><b>🎯 ${n} מתוך ${N} משימות הושלמו · 💎 ${g} ${g===1?'יהלום':'יהלומים'}</b><div style="height:10px;background:rgba(255,255,255,.12);border-radius:6px;margin:8px 0;overflow:hidden"><div style="height:100%;width:${Math.round(n/N*100)}%;background:linear-gradient(90deg,#6dff9e,#58c8ff)"></div></div><p class="note" style="text-align:right;margin:0">כל משימה אפשר לעשות פעם אחת. 💎 יהלום נותן לשחק שוב במשימה שכבר עשית. מקבלים יהלום על כל מדינה חדשה שטסים אליה ✈️. כשמסיימים את כל המשימות, כולן נפתחות מחדש!</p></div>`;
+  const row=(m,isDone)=>`<div class="item" style="${isDone?'opacity:.75':''}"><div class="ic">${isDone?'✅':m.icon}</div><div class="tx"><b>${esc(m.title)}</b><p>${esc(m.desc)}</p>${m.reward?`<span class="pr">+$${m.reward}</span>`:''}</div>${isDone?`<button class="pcbtn" data-mreplay="${m.id}" ${mission||g<1?'disabled':''}>💎 שוב</button>`:`<button class="pcbtn" data-mission="${m.id}" ${mission?'disabled':''}>התחל</button>`}</div>`;
+  h+=L.filter(m=>!done.includes(m.id)).map(m=>row(m,false)).join('');const dl=L.filter(m=>done.includes(m.id));if(dl.length)h+=`<p class="note"><b>✅ משימות שעשית</b></p>`+dl.map(m=>row(m,true)).join('');return h;}
+function storyDone(id){if(!id||!missionList().some(m=>m.id===id))return;gemsInit();const d=stats.done=stats.done||[];if(!d.includes(id))d.push(id);
+  if(missionList().every(m=>d.includes(m.id))){stats.done=[];stats.gems=(stats.gems||0)+3;setTimeout(()=>big('🏆 סיימת את כל המשימות!','כולן נפתחו מחדש · +💎3 יהלומים','#ffd84a',4000),3200);}save();}
+function replayClick(t){const id=t.dataset.mreplay;if(!id)return false;if(mission||(stats.gems||0)<1)return true;stats.gems--;save();closeMenu();toast('💎 השתמשת ביהלום');startMission(id);return true;}
 /* ============ accidents & arguments ============ */
 function crashFight(a,b,imp){const pl=a===P.car||b===P.car;
   if(pl){const o=a===P.car?b:a;if(o.driver==='ai'&&imp>10&&R()<.6){const q=ejectDriver(o,false,false);q.state='fight';q.fightT=15;say(q,'fight',true);}}
