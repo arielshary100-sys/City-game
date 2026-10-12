@@ -59,6 +59,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ink);color:var(-
 #missionBox{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);background:var(--panel);padding:7px 16px;border-radius:12px;font-weight:800;font-size:15px;z-index:5;text-align:center;border:2px solid var(--sun);max-width:44vw;pointer-events:none}
 #missionBox small{display:block;color:var(--sun);font-size:12px;font-weight:700}
 @media (max-width:520px){#missionBox{top:calc(env(safe-area-inset-top,0px) + 196px);max-width:80vw}}
+#bBack{position:fixed;right:14px;top:50%;z-index:6;background:rgba(22,16,44,.9);color:#fff;border:2px solid #fff;border-radius:14px;padding:10px 16px;font-family:inherit;font-size:18px;font-weight:800}#bBack.hidden{display:none}
 #bHands{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:6;background:#d62839;color:#fff;border:3px solid #fff;border-radius:22px;padding:10px 22px;font-family:inherit;font-size:34px;font-weight:900;display:flex;flex-direction:column;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.5);animation:pulseH 1s infinite}#bHands small{font-size:15px}#bHands.hidden{display:none}@keyframes pulseH{50%{transform:translateX(-50%) scale(1.07)}}
 #paper{position:fixed;inset:0;z-index:9;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}#paper.show{display:flex}#paper .pp{background:#f4ecd8;color:#1a1a1a;width:min(92vw,460px);max-height:88vh;overflow:auto;border-radius:6px;padding:16px 18px;box-shadow:0 10px 40px rgba(0,0,0,.6);font-family:Georgia,'Assistant',serif;direction:rtl;text-align:right}#paper .pphead{font-family:'Secular One',Assistant,sans-serif;font-size:30px;border-bottom:3px double #1a1a1a;padding-bottom:6px;display:flex;justify-content:space-between;align-items:flex-end}#paper .pphead small{font-size:13px}#paper h2{font-size:26px;margin:12px 0 4px;line-height:1.15}#paper .ppsub{margin:0 0 10px;font-size:15px;color:#333}#paper .ppbox{border:1px solid #888;padding:8px;margin:8px 0;font-size:14px;background:rgba(255,255,255,.4)}#paper .ppsmall{font-size:13px;color:#444;border-top:1px solid #999;padding-top:6px}
 #subt{position:fixed;left:50%;top:84px;transform:translateX(-50%);max-width:min(92vw,640px);background:rgba(0,0,0,.72);color:#fff;padding:9px 16px;border-radius:12px;font-size:17px;font-weight:700;z-index:7;pointer-events:none;opacity:0;transition:opacity .3s;text-align:center;direction:rtl}#subt.show{opacity:1}#subt b{color:#ffd84a}
@@ -220,7 +221,7 @@ body.photo #topBtns .sbtn:not(#bPhoto){display:none}
 <div id="speedo" class="hidden"></div>
 <div id="radio" class="hidden"></div>
 <div id="missionBox" class="hidden"></div>
-<div id="toast"></div><button id="bHands" class="hidden">🙌<small>כולם להרים ידיים!</small></button><div id="chatFeed"></div>
+<div id="toast"></div><button id="bBack" class="hidden">🚪 חזור החוצה</button><button id="bHands" class="hidden">🙌<small>כולם להרים ידיים!</small></button><div id="chatFeed"></div>
 <div id="zone"></div>
 <div id="robBar" class="hidden">🏪 שוד בתהליך… אל תזוז<div class="bar"><div id="robFill" style="width:0"></div></div></div>
 <div id="bigmap" class="overlay hidden">
@@ -1942,7 +1943,7 @@ function buildHome(){const x0=HX,z0=HZ;const white=HOUSE_A,wood=HOUSE_B,dark=new
 
 /* ============ bank heist, businesses, jobs with a boss, fun park, street races, friends ============ */
 const BANKB=blocks[HB*BL+HB-1],BANK={x:BANKB.ix+10,z:BANKB.iz+17.6};window.__BANK=BANK;
-MISSIONS.push({id:'bank',title:'שוד הבנק',desc:'היכנס לבנק העיר עם נשק וצעק "כולם להרים ידיים!". הפקידים יביאו לך את הכסף, ואז ברח למחבוא. חמישה כוכבים מובטחים!',reward:1000,icon:'🏦'});
+MISSIONS.push({id:'bank',title:'שוד הבנק',desc:'היכנס לבנק העיר עם נשק וצעק "כולם להרים ידיים!". שלושה פקידים יביאו לך $5,000 כל אחד, ואז ברח למחבוא. חמישה כוכבים מובטחים!',reward:15000,icon:'🏦'});
 const HIDE={x:(8*4+1)*T,z:(8*11+5)*T};
 function bankStart(m){mission={id:'bank',title:m.title,reward:0,stage:'go',prog:0,target:{x:BANK.x,z:BANK.z},timer:null,guards:[],npcs:[]};}
 function bankUpdate(M,dt){if(!M.ach&&!M.loc&&bankInside(M,dt))return;const BANK=M.loc||window.__BANK;
@@ -2802,7 +2803,7 @@ function enterBank(M){bankFade('🏦 נכנס לבנק…',()=>{if(P.car){P.car.
   const gd=npc(BKX+22.5,BKZ+2,{shirt:0x2f2f36,pants:0x1a1a1a,hairStyle:'buzz',hatT:'cap',hatC:0x1a1a1a});setGun(gd.h,'pistol');gd.a=Math.PI;M.guard=gd;
   M.npcs.push(...M.tellers,...M.cust,gd);M.stage='inside';M.target=null;M.cash=0;
   line('👩‍💼 פקידה','שלום, ברוך הבא לבנק העיר! איך אפשר לעזור?');});}
-function leaveBank(M,escape){bankFade(escape?'🏃 בורח מהבנק…':'🚪 יוצא מהבנק…',()=>{const B=window.__BANK;P.x=B.x;P.z=B.z+3.5;P.a=Math.PI/2;cam.yaw=Math.PI/2;cam.x=P.x;cam.z=P.z-4;M.inside=false;
+function leaveBank(M,escape){bankFade(escape?'🏃 בורח מהבנק…':'🚪 יוצא מהבנק…',()=>{const B=window.__BANK;P.x=B.x;P.z=B.z+4.5;P.a=Math.PI/2;cam.yaw=Math.PI/2;cam.x=P.x;cam.z=P.z-4;M.inside=false;if(!escape)M.stage='go';
   for(const q of M.npcs||[]){peds=peds.filter(p=>p!==q);removePed(q);}M.npcs=[];
   if(escape){if(M.coop)fgSend({a:'out',kind:'coop',from:myNick,to:M.coop});M.stage='escape';heat=22;lastCrime=time;M.target=HIDE;M.timer=240;for(let i=0;i<5;i++){const q=randomWalk(B.x,B.z,12,30,60);if(q){const g=mkPed(q.x,q.z,'cop');g.state='hostile';peds.push(g);}}big('💰 יש לך את הכסף!',`${money(M.cash)} בשקים · ברח למחבוא הצהוב!`,'#6dff9e',3200);sfx('cash');}});}
 function handsUp(){const M=mission;if(!M||M.id!=='bank'||M.stage!=='inside')return;const w=WEAP[P.weapons[P.wi].id];if(w.melee){toast('🔫 צריך נשק ביד! בחר נשק ואז צעק');return;}
@@ -2815,13 +2816,15 @@ function bankInside(M,dt){const btn=$('bHands');
   if(M.stage==='inside'){M.status='🔫 שלוף נשק ולחץ 🙌 (או H): "כולם להרים ידיים!"';return true;}
   if(M.stage==='tellers'){const t=M.tellers[M.ti];M.status=`💰 הפקידים מביאים לך כסף… ${money(M.cash)}`;
     if(t&&time>M.next&&t.state==='surrender'){M.next=1e9;giveBag(t);t.state='route';t.rsp=3.6;t.route=[{x:BKX+21,z:BKZ+13},{x:BKX+21,z:BKZ+9},'P'];t.ri=0;showBubble(t,'😰 כן, כן! אני מביא!',null,null,2.5);
-      t.onArrive=p=>{dropBag(p);const a=Math.round(rr(1500,2800)/50)*50;M.cash+=a;sfx('cash');toast(`💰 +${money(a)}`);showBubble(p,pick(['😰 הנה… בבקשה אל תירה!','זה כל מה שיש בקופה! 😨','קח, קח! רק אל תפגע בנו 🙏']),null,null,3);
+      t.onArrive=p=>{dropBag(p);const a=5000;M.cash+=a;sfx('cash');toast(`💰 +${money(a)}`);showBubble(p,pick(['😰 הנה… בבקשה אל תירה!','זה כל מה שיש בקופה! 😨','קח, קח! רק אל תפגע בנו 🙏']),null,null,3);
         p.state='route';p.route=[{x:BKX+21,z:BKZ+9},{x:BKX+21,z:BKZ+13},p.home];p.ri=0;p.onArrive=q=>{q.state='surrender';q.a=-Math.PI/2;};M.ti++;M.next=time+.8;
         if(M.ti>=M.tellers.length){M.stage='exit';M.target={x:BKDOOR.x,z:BKDOOR.z};setTimeout(()=>{if(mission===M){sfx('fail');big('🚨 מישהו לחץ על האזעקה!','צא מהבנק מהר וברח למחבוא','#ff3d7f',3000);}},1500);}};}
     return true;}
   if(M.stage==='exit'){M.status=`💰 ${money(M.cash)} · צא מהדלת! 🚪`;if(D(P,BKDOOR)<1.3)leaveBank(M,true);return true;}
   return false;}
-function bankBtn(){const b=$('bHands');if(!b)return;const on=!!(mission&&mission.id==='bank'&&mission.stage==='inside'&&!menuOpen);b.classList.toggle('hidden',!on);}
+function bankBtn(){const b=$('bHands');if(!b)return;const on=!!(mission&&mission.id==='bank'&&mission.stage==='inside'&&!menuOpen);b.classList.toggle('hidden',!on);$('bBack').classList.toggle('hidden',!(on||canBackJewel()));}
+function canBackJewel(){const M=mission;return !!(M&&M.id==='jewel'&&M.stage==='in'&&M.jin&&!M.cash&&!M.alarm&&!menuOpen);}
+function backOut(){const M=mission;if(!M)return;if(M.id==='bank'&&M.stage==='inside')leaveBank(M,false);else if(canBackJewel())bankFade('🚪 יוצא מהחנות…',()=>{M.jin=false;P.x=JEW.x;P.z=JEW.z+4;M.stage='go';M.off=0;M.fuseUsed=0;});}
 /* ============ more city life: fuel, apartments, newspaper, heli taxi, lake, new missions, group games ============ */
 // ---------- fuel ----------
 const FUELS=[];
@@ -3972,7 +3975,7 @@ $('buildBar').addEventListener('pointerdown',e=>e.stopPropagation());$('buildBar
 $('bCode').addEventListener('click',e=>{e.stopPropagation();if(started&&!menuOpen)openMenu(hubInfo('code'),'hub:code');});
 $('bPhoto').addEventListener('click',e=>{e.stopPropagation();if(started)togglePhoto();});
 $('qrScan').addEventListener('pointerdown',e=>e.stopPropagation());$('qrScan').addEventListener('click',e=>e.stopPropagation());$('qrCancel').addEventListener('click',()=>{stopScan();scanCb=null;});$('qrFile').addEventListener('change',e=>{scanPhoto(e.target.files&&e.target.files[0]);e.target.value='';});
-$('bHands').addEventListener('click',e=>{e.stopPropagation();handsUp();});addEventListener('keydown',e=>{if(e.code==='KeyH'&&!(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')))handsUp();});$('bChat').addEventListener('click',e=>{e.stopPropagation();quickChat();});$('play').addEventListener('click',()=>setTimeout(()=>{if(started)roomFromUrl();},1500));
+$('bHands').addEventListener('click',e=>{e.stopPropagation();handsUp();});$('bBack').addEventListener('click',e=>{e.stopPropagation();backOut();});addEventListener('keydown',e=>{if(e.code==='KeyH'&&!(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')))handsUp();});$('bChat').addEventListener('click',e=>{e.stopPropagation();quickChat();});$('play').addEventListener('click',()=>setTimeout(()=>{if(started)roomFromUrl();},1500));
 $('bFriends').addEventListener('click',e=>{e.stopPropagation();if(started&&!menuOpen)openMenu(hubInfo('friends'),'hub:friends');});
 $('invY').addEventListener('click',e=>{e.stopPropagation();if(pendingFg){acceptFg();return;}if(!P.dead&&!cine)joinRace();});$('invN').addEventListener('click',e=>{e.stopPropagation();raceInvite=null;pendingFg=null;$('invite').classList.remove('show');});
 for(const id of ['bMap','bFS','bFriends','bPhoto','bCode','bPow','bBuild','invY','invN'])$(id).addEventListener('pointerdown',e=>e.stopPropagation());
