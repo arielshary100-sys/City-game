@@ -149,8 +149,8 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--ink);color:var(-
 #pcbody textarea{width:100%;font-family:monospace;font-size:11px;direction:ltr;background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:8px;resize:none;word-break:break-all}
 #lvl{font-weight:800;font-size:13px;color:#ffd23a;text-shadow:0 2px 0 #000;direction:rtl}
 @keyframes fishmk{from{left:0}to{left:100%}}
-#jail{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 150px);transform:translate(-50%,300%);transition:transform .35s;z-index:9;display:flex;gap:12px;align-items:center;background:var(--panel);border:2px solid var(--magenta);border-radius:16px;padding:10px 16px;font-weight:800}
-#jail.show{transform:translate(-50%,0)}
+#jail{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 150px);transform:translate(-50%,300%);visibility:hidden;transition:transform .35s;z-index:9;display:flex;gap:12px;align-items:center;background:var(--panel);border:2px solid var(--magenta);border-radius:16px;padding:10px 16px;font-weight:800}
+#jail.show{transform:translate(-50%,0);visibility:visible}
 @keyframes hammk{from{top:0}to{top:calc(100% - 8px)}}
 #auth{max-width:300px;margin:0 auto 14px;display:flex;flex-direction:column;gap:9px}
 .tabs2{display:flex;gap:6px}.tabs2 button{flex:1;font-family:inherit;font-weight:800;font-size:15px;padding:9px;border:0;border-radius:10px;background:rgba(255,255,255,.08);color:var(--muted);cursor:pointer}.tabs2 button.on{background:var(--sky);color:#0c1a33}
@@ -3983,7 +3983,8 @@ function updCamera(dt){
   const hx=tg.x+Math.cos(cam.yaw+Math.PI/2)*side,hz=tg.z+Math.sin(cam.yaw+Math.PI/2)*side,hy=baseY+height;
   const cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);let d=dist;
   if(!P.plane)for(let s=.5;s<=dist;s+=.3){const x=hx-Math.cos(cam.yaw)*s*cp,z=hz-Math.sin(cam.yaw)*s*cp,y=hy+sp*s;if(y<heightAt(x,z)+groundY(x,z)&&isBlock(x,z)){d=Math.max(.8,s-.4);break;}}
-  let cx=hx-Math.cos(cam.yaw)*d*cp,cz=hz-Math.sin(cam.yaw)*d*cp,cy=Math.max(hy+sp*d,groundY(cx,cz)+.5,-.2);
+  if(!veh&&d<2.2){const k=(2.2-d)/1.4;d=Math.max(d,1.5);cam.closeK=k;}else cam.closeK=0;
+  let cx=hx-Math.cos(cam.yaw)*d*cp,cz=hz-Math.sin(cam.yaw)*d*cp,cy=Math.max(hy+sp*d+(cam.closeK||0)*1.8,groundY(cx,cz)+.5,-.2);
   const k=Math.min(1,dt*(inCar?9:14));cam.x+=(cx-cam.x)*k;cam.y+=(cy-cam.y)*k;cam.z+=(cz-cam.z)*k;
   const sh=cam.shake;cam.shake=Math.max(0,cam.shake-dt*1.5);
   camera.position.set(cam.x+rr(-sh,sh),cam.y+rr(-sh,sh),cam.z+rr(-sh,sh));
