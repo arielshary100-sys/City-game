@@ -378,16 +378,18 @@ function inCity(x,z){return x>=0&&z>=0&&x<WS&&z<WS;}
 function isLand(x,z){return inCity(x,z)||(!!zoneAt(x,z)&&!inLake(x,z));}
 
 /* ============ city terrain: gentle hills over the whole city (applied in the vertex shader) ============ */
-const CH_A=13,CH_E=90;
-function cityH(x,z){if(x<=0||z<=0||x>=WS||z>=WS)return 0;let e=Math.min(Math.min(x,WS-x),Math.min(z,WS-z))/CH_E;if(e<=0)return 0;if(e>1)e=1;e=e*e*(3-2*e);return e*CH_A*(.5+.3*Math.sin(x*.031+1.3)*Math.cos(z*.026)+.2*Math.sin((x+z)*.018+.7));}
-{const W=WS.toFixed(1),DEF=`#ifndef CITYH\n#define CITYH(px,pz) ((px>0.0&&pz>0.0&&px<${W}&&pz<${W})?(smoothstep(0.0,1.0,clamp(min(min(px,${W}-px),min(pz,${W}-pz))/${CH_E.toFixed(1)},0.0,1.0))*${CH_A.toFixed(1)}*(0.5+0.3*sin(px*0.031+1.3)*cos(pz*0.026)+0.2*sin((px+pz)*0.018+0.7))):0.0)\n#endif\n`;
+const CH_A=20,CH_E=170;
+function cityH(x,z){if(x<=0||z<=0||x>=WS||z>=WS)return 0;let e=Math.min(Math.min(x,WS-x),Math.min(z,WS-z))/CH_E;if(e<=0)return 0;if(e>1)e=1;e=e*e*(3-2*e);return e*CH_A*(.5+.3*Math.sin(x*.012+1.3)*Math.cos(z*.010)+.2*Math.sin((x+z)*.007+.7));}
+{const W=WS.toFixed(1),DEF=`#ifndef CITYH\n#define CITYH(px,pz) ((px>0.0&&pz>0.0&&px<${W}&&pz<${W})?(smoothstep(0.0,1.0,clamp(min(min(px,${W}-px),min(pz,${W}-pz))/${CH_E.toFixed(1)},0.0,1.0))*${CH_A.toFixed(1)}*(0.5+0.3*sin(px*0.012+1.3)*cos(pz*0.010)+0.2*sin((px+pz)*0.007+0.7))):0.0)\n#endif\n`;
   const pv=THREE.ShaderChunk.project_vertex,pv2=pv.replace('mvPosition = modelViewMatrix * mvPosition;','mvPosition = modelMatrix * mvPosition;\nmvPosition.y += CITYH(mvPosition.x, mvPosition.z);\nmvPosition = viewMatrix * mvPosition;');
   if(pv2!==pv)THREE.ShaderChunk.project_vertex=DEF+pv2;
   const wv=THREE.ShaderChunk.worldpos_vertex,wv2=wv.replace('worldPosition = modelMatrix * worldPosition;','worldPosition = modelMatrix * worldPosition;\n\tworldPosition.y += CITYH(worldPosition.x, worldPosition.z);');
   if(wv2!==wv)THREE.ShaderChunk.worldpos_vertex=DEF+wv2;
   const sv=THREE.ShaderLib.sprite.vertexShader,sv2=sv.replace('vec4 mvPosition = modelViewMatrix * vec4( 0.0, 0.0, 0.0, 1.0 );','vec4 mvPosition = modelMatrix * vec4( 0.0, 0.0, 0.0, 1.0 );\n\tmvPosition.y += CITYH(mvPosition.x, mvPosition.z);\n\tmvPosition = viewMatrix * mvPosition;');
   if(sv2!==sv)THREE.ShaderLib.sprite.vertexShader=DEF+sv2;
-  window.__cityTerrain=[pv2!==pv,wv2!==wv,sv2!==sv];}
+  window.__cityTerrain=[pv2!==pv,wv2!==wv,sv2!==sv];
+  const _cs=new THREE.Sphere();THREE.Frustum.prototype.intersectsObject=function(o){const g=o.geometry;if(g.boundingSphere===null)g.computeBoundingSphere();_cs.copy(g.boundingSphere).applyMatrix4(o.matrixWorld);_cs.center.y+=cityH(_cs.center.x,_cs.center.z);return this.intersectsSphere(_cs);};
+  const _ss=new THREE.Sphere(new THREE.Vector3(),.7071067811865476);THREE.Frustum.prototype.intersectsSprite=function(sp){_ss.center.set(0,0,0);_ss.radius=.7071067811865476;_ss.applyMatrix4(sp.matrixWorld);_ss.center.y+=cityH(_ss.center.x,_ss.center.z);return this.intersectsSphere(_ss);};}
 /* ============ the hills: big rolling countryside west of the city ============ */
 const HX0=-900,HX1=-.01,HZ0=-420,HZ1=353,Z_HILL={id:'hills',col:'#5f9a48',x0:HX0,x1:HX1,z0:HZ0,z1:HZ1,solids:[{x0:-1.4,x1:HX1,z0:0,z1:199.5,h:1.2},{x0:-1.4,x1:HX1,z0:210.5,z1:HZ1,h:1.2}]};ZN.push(Z_HILL);
 const sstep=(a,b,v)=>{const t=clamp((v-a)/(b-a),0,1);return t*t*(3-2*t);};
