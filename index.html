@@ -2662,7 +2662,7 @@ function thunder(vol){if(!AC)return;try{const now=AC.currentTime,s=AC.createBuff
 function engFreq(c){const v=Math.abs(c.v),top=Math.max(20,c.max||30),edges=[0,.18,.36,.56,.78,1.01];let g=1;while(g<5&&v>edges[g]*top)g++;if(g!==gear){if(g>gear)shiftT=.12;gear=g;}
   const lo=edges[g-1]*top,hi=edges[g]*top,rpm=clamp((v-lo)/Math.max(1,hi-lo),0,1);shiftT=Math.max(0,shiftT-1/60);return 42+rpm*(70+g*6)+(g-1)*14-(shiftT>0?25:0);}
 let groundM=null,groundBase=null;
-function updReal(dt){realAudio();lifeTick(dt);bankBtn();fuelTick(dt);dayTick();hillsTraffic();airportLife(dt);const c=P.car,now=AC?AC.currentTime:0;
+function updReal(dt){realAudio();lifeTick(dt);famTick(dt);bankBtn();fuelTick(dt);dayTick();hillsTraffic();airportLife(dt);const c=P.car,now=AC?AC.currentTime:0;
   // --- player car: tyre slip, skid marks, smoke, splashes
   let slip=0;if(c&&!c.air&&!isBike(c)&&!MODELS[CT[c.type].model].animal){slip=Math.abs(c.slip||0);const spd=Math.abs(c.v),braking=(keys.KeyS||keys.ArrowDown)&&c.v>14;
     const skid=spd>6&&(slip>.13||(braking&&spd>14)||((keys.Space||jumpHeld)&&spd>9));const w=wheelPts(c),y=groundY(c.x,c.z);
@@ -2711,6 +2711,7 @@ function pedStates(p,dt){const s=p.state;
   if(s==='chat'||s==='phone'){p.chatT-=dt;if(s==='chat'&&p.mate){p.a=lerpA(p.a,Math.atan2(p.mate.z-p.z,p.mate.x-p.x),dt*5);if(p.mate.state!=='chat')p.chatT=0;if(R()<dt*.4)showBubble(p,R()<.5?pick(CHATL):pick(CHAT2),null,null,3.5);}if(p.chatT<=0){p.state='walk';p.mate=null;p.ta=p.a+rr(-2,2);}return true;}
   if(s==='thief'){p.rs=Math.max(4.4,(p.rs||5.9)-dt*.05);const pp=me(),a=Math.atan2(p.z-pp.z,p.x-pp.x)+Math.sin(time*1.7+p.id)*.5+p.detour;p.a=lerpA(p.a,a,dt*6);if(!moveC(p,Math.cos(p.a)*p.rs*dt,Math.sin(p.a)*p.rs*dt,.35)){p.detour=rr(-1.8,1.8);}else if(R()<dt*.3)p.detour*=.5;p.walk+=p.rs*dt;p.moving=true;return true;}
   if(s==='route'){const w=p.route[p.ri],pp=me(),tx=w==='P'?pp.x:w.x,tz=w==='P'?pp.z:w.z,d=walkTo(p,tx,tz,p.rsp||2.6,dt);if(d<(w==='P'?1.5:.45)){p.ri++;if(p.ri>=p.route.length){p.state='wait';const f=p.onArrive;p.onArrive=null;if(f)f(p);}}return true;}
+  if(s==='couple'){coupleAI(p,dt);return true;}
   if(s==='follow'){const pp=me(),d=Math.hypot(pp.x-p.x,pp.z-p.z);if(d>2.2)walkTo(p,pp.x,pp.z,Math.min(4.8,(d-1.5)*2.2),dt);else p.a=lerpA(p.a,Math.atan2(pp.z-p.z,pp.x-p.x),dt*4);return true;}
   return false;}
 // --- story: missions come in a fixed order; you can skip one
@@ -2875,7 +2876,7 @@ function renderApt(H){const a=H.apt,own=ownApt(a.id);let h=`<div class="item"><d
 let DL=null,lastDay=-1;
 function dayReset(){DL={missions:[],heist:0,jewel:0,kills:0,km0:stats.km,fish0:stats.fish,stars:0,crashes:0,m0:P.money,rent:0,rain:false};}
 const SMALLNEWS=['🐈 חתול נתקע על עץ בשכונת הווילות. הכבאים חילצו אותו','🍕 הפיצרייה בעיר הכריזה: מבצע 1+1 כל השבוע','⚽ הקבוצה המקומית ניצחה 3:1','🦆 משפחת ברווזים חצתה את הכביש הראשי והפקק נמשך שעה','🎤 זמר מפורסם נראה אוכל פלאפל במרכז העיר','⛰️ מטיילים מספרים: הנוף מתצפית הגבעות מדהים','🎣 דייג תפס דג ענק באגם שבגבעות','🚧 עבודות בכביש: נהגים מתבקשים להיזהר'];
-function newDay(n){if(!DL){dayReset();return;}const mine=APTS.filter(a=>ownApt(a.id)),rent=mine.reduce((s,a)=>s+a.inc,0);if(rent){P.money+=rent;DL.rent=rent;}
+function newDay(n){famGrow();if(!DL){dayReset();return;}const mine=APTS.filter(a=>ownApt(a.id)),rent=mine.reduce((s,a)=>s+a.inc,0);if(rent){P.money+=rent;DL.rent=rent;}
   const km=Math.max(0,stats.km-DL.km0),fish=stats.fish-DL.fish0,dm=Math.round(P.money-DL.m0);let head,sub;
   if(DL.heist){head=`🏦 שוד נועז בבנק העיר!`;sub=`השודד נמלט עם ${money(DL.heist)}. המשטרה מבקשת מהציבור עזרה`;}
   else if(DL.jewel){head='💎 יהלומים נעלמו מחנות התכשיטים!';sub=`נגנבו תכשיטים בשווי ${money(DL.jewel)}. מערכת הלייזרים לא עצרה את הגנב`;}
@@ -2975,7 +2976,7 @@ function moreUpdate(M,dt){const pp=me(),foot=!P.car&&!P.boat&&!P.plane;
     if(inCar?(D(P.car,POLICE)<16&&Math.abs(P.car.v)<2.5):D(w,POLICE)<6){line('👮 מפקד','העד הגיע בשלום. עבודה מצוינת!');successMission();}return true;}
   if(M.id==='getaway'){if(M.stage==='wait'){M.status=`🚗 חכה ברכב ליד הבנק · ${M.partner} שודד`;return true;}let g=null;for(const x of ghosts.values())if(x.nick===M.partner)g=x;if(g)M.target={x:g.x,z:g.z};const d=g?Math.round(Math.hypot(g.x-P.x,g.z-P.z)):null;M.status=`🤝 לווה את ${M.partner} למחבוא${d!=null?` · ${d} מ׳`:''}${d>80?' ⚠️ אתה רחוק!':''}`;lastCrime=Math.max(lastCrime,time-5);return true;}
   return false;}
-function moreRender(H){if(H.type==='school')return renderSchool(H);if(H.type==='dfshop')return renderDF(H);if(H.type==='gate')return renderGate();if(H.type==='apt')return renderApt(H);if(H.type==='heli')return renderPads(H);return null;}
+function moreRender(H){if(H.type==='work')return renderWork(H);if(H.type==='shelter')return renderShelter();if(H.type==='school')return renderSchool(H);if(H.type==='dfshop')return renderDF(H);if(H.type==='gate')return renderGate();if(H.type==='apt')return renderApt(H);if(H.type==='heli')return renderPads(H);return null;}
 function moreClick(t){const d=t.dataset;if(phoneClick(d))return true;if(dfClick(d))return true;if(d.aptbuy){const a=APTS.find(x=>x.id===d.aptbuy);if(!a||ownApt(a.id)||P.money<a.price)return true;P.money-=a.price;stats.apts=(stats.apts||[]).concat(a.id);save();sfx('win');big('🏠 קנית דירה!',`${a.n} · ${money(a.inc)} כל יום`,'#6dff9e',2800);renderMenu();return true;}
   if(d.heli!=null&&d.heli!==undefined&&t.hasAttribute('data-heli')){const H=hubInfo(tab.slice(4)),to=PADS[+d.heli];if(H&&to&&P.money>=250)heliFly(H.pad,to);return true;}
   if(d.crg){crgInvite();return true;}if(d.hrace){closeMenu();hillsRace();return true;}return false;}
@@ -2999,7 +3000,7 @@ function hroadAI(c,dt){const n=HROAD.length,i0=((c.hi%n)+n)%n,p=HROAD[((i0+c.dir
   if(!P.car&&D2(P.x,P.z,fx,fz)<16)want=0;const thr=c.v<want?1:c.v>want+2?-.6:0;if(physCar(c,dt,thr,clamp(diff*2.3,-1,1),false)){c.stuck=(c.stuck||0)+dt;if(c.stuck>4){c.hi+=c.dirn*6;const r=HROAD[((c.hi%n)+n)%n];c.x=r.x;c.z=r.z;c.stuck=0;}}else c.stuck=0;}
 function hillsTraffic(){const pp=me();if(!inHills(pp.x,pp.z))return;let n=0;for(const c of cars)if(c.driver==='hroad'&&!c.dead)n++;if(n>=(isTouch?5:8)||R()>.05)return;
   for(let k=0;k<12;k++){const i=(Math.random()*HROAD.length)|0,p=HROAD[i],d=D2(p.x,p.z,pp.x,pp.z);if(d<70*70||d>160*160)continue;if(cars.some(c=>D2(c.x,c.z,p.x,p.z)<400))continue;const dirn=R()<.5?1:-1,q=HROAD[((i+dirn)%HROAD.length+HROAD.length)%HROAD.length];
-    const c=mkCar(p.x,p.z,Math.atan2(q.z-p.z,q.x-p.x),pick(['civ','hatch','pickup','van','civ','taxi']));c.driver='hroad';c.hi=i;c.dirn=dirn;c.v=10;cars.push(c);return;}}
+    const c=mkCar(p.x,p.z,Math.atan2(q.z-p.z,q.x-p.x),pick(['civ','hatch','pickup','van','civ','taxi']));c.driver='hroad';c.hi=i;c.dirn=dirn;c.v=10;cars.push(c);addPassengers(c);return;}}
 // ---------- airport: flights and travellers with suitcases ----------
 let afl=null,aflT=4;const AIRC={x:265,z:-100};
 function airportLife(dt){const pp=me(),near=D2(pp.x,pp.z,AIRC.x,AIRC.z)<750*750&&!cine;
@@ -3073,7 +3074,7 @@ function buildCountryRings(){for(const k in COUNTRY){const C=COUNTRY[k],Z=ZN.fin
     const pal=(CN.find(c=>c[0]===k)||[])[9]||[0xc4b39e,0x8f9aa8,0xd2cbbb];
     const ib=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshLambertMaterial({color:0xffffff,map:winTex}),bl.length);bl.forEach((o,j)=>{dm.position.set(o.x,o.y,o.z);dm.scale.set(o.sx,o.sy,o.sz);dm.rotation.set(0,0,0);dm.updateMatrix();ib.setMatrixAt(j,dm.matrix);ib.setColorAt(j,new THREE.Color(pick(pal)));});ib.frustumCulled=false;grp.add(ib);
     if(tr.length){const it=new THREE.InstancedMesh(mergeG([colr(cyl(.25,.35,3,6,0,1.5,0),0x6b4a2a),colr(new THREE.IcosahedronGeometry(2,0).translate(0,4,0),0x3c8a2e)]),vcMat,tr.length);tr.forEach(([x,z],j)=>{dm.position.set(x,0,z);dm.scale.setScalar(rr(.8,1.4));dm.rotation.set(0,0,0);dm.updateMatrix();it.setMatrixAt(j,dm.matrix);});it.frustumCulled=false;grp.add(it);}}}
-function buildWorld2(){buildDutyFree();buildCountryRings();buildSchools();}
+function buildWorld2(){buildDutyFree();buildCountryRings();buildSchools();buildFam();}
 /* ============ phone apps: restart, "start life over" (school → high school → university) ============ */
 const lifeOn=()=>!!(stats.life&&stats.life.on),lifeAge=()=>lifeOn()?stats.life.age:30;
 const lifeSc=()=>lifeOn()?clamp(.55+(stats.life.age-6)*.03,.55,1):1;
@@ -3093,28 +3094,119 @@ const QH=()=>{const r=R();if(r<.4){const a=3+(Math.random()*9|0),b=3+(Math.rando
 const QU=()=>{const r=R();if(r<.4){const p=pick([10,20,25,50]),n=pick([80,120,200,400]);return[`כמה זה ${p}% מ-${n}?`,n*p/100,[n*p/100+10,n*p/50]];}
   const q=pick([['מהי מהירות האור בערך?','300,000 ק״מ בשנייה',['300 ק״מ בשנייה','3,000 ק״מ בשנייה']],['מה השורש של 144?','12',['14','11']],['מי ניסח את תורת היחסות?','איינשטיין',['ניוטון','גלילאו']],['איזה איבר שואב דם בגוף?','הלב',['הכבד','הריאות']],['מה היחידה של חשמל (זרם)?','אמפר',['וולט','וואט']],['כמה שניות יש בשעה?','3600',['600','6000']]]);return[q[0],q[1],q[2]];};
 let LS=null;
-function newLesson(k){const g=k==='e'?QE:k==='h'?QH:QU,qs=[];for(let i=0;i<3;i++){const [t,a,w]=g();const opts=[a,...w].map(String).sort(()=>R()-.5);qs.push({t,a:String(a),opts});}LS={k,qs,i:0,ok:0,fb:''};}
+function newLesson(k){const g=k==='e'?QE:k==='h'?QH:QU,qs=[],a=stats.life.age,exam=a===11||a===17||a===21,n=exam?5:3;for(let i=0;i<n;i++){const [t,a,w]=g();const opts=[a,...w].map(String).sort(()=>R()-.5);qs.push({t,a:String(a),opts});}LS={k,qs,i:0,ok:0,fb:'',n,need:exam?4:2,exam};}
 function renderSchool(H){const k=H.sch,esc=x=>String(x).replace(/[<>&"]/g,'');
   if(!lifeOn())return`<p class="note">${SCHN[k]}</p><div class="item"><div class="ic">👶</div><div class="tx"><b>רוצה ללמוד כאן?</b><p>פתח את הטלפון 📱 ובחר "👶 התחל חיים מחדש". תהיה ילד, תלמד בבית ספר, בתיכון ובאוניברסיטה, ותגדל כל שנה!</p></div></div>`;
   const a=stats.life.age,need=lifeStage(a);if(need!==k)return`<p class="note">אתה בגיל ${a} (${lifeLabel(a)}). אתה צריך ללכת ל<b>${SCHN[need]}</b> (מסומן במפה).</p>`;
   if(!LS||LS.k!==k)newLesson(k);const L=LS;
-  if(L.i>=3){const pass=L.ok>=2;return`<p class="note" style="font-size:20px">${pass?'🎉 עברת את השנה!':'😕 לא עברת הפעם'} (${L.ok}/3)</p><button class="btn" data-lesson="${pass?'next':'again'}" style="width:100%">${pass?'🎂 לשנה הבאה!':'🔁 נסה שוב'}</button>`;}
-  const q=L.qs[L.i];return`<p class="note">🧑‍🏫 ${lifeLabel(a)} · שאלה ${L.i+1}/3 ${L.fb}</p><div class="item" style="display:block"><b style="font-size:19px">${esc(q.t)}</b><div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">${q.opts.map(o=>`<button class="pcbtn" data-ans="${esc(o)}">${esc(o)}</button>`).join('')}</div></div>`;}
+  if(L.i>=L.n){const pass=L.ok>=L.need;return`<p class="note" style="font-size:20px">${pass?(L.exam?'🎉 עברת את מבחן הגמר!':'🎉 עברת את השנה!'):'😕 לא עברת הפעם'} (${L.ok}/${L.n})</p><button class="btn" data-lesson="${pass?'next':'again'}" style="width:100%">${pass?'🎂 לשנה הבאה!':'🔁 נסה שוב'}</button>`;}
+  const q=L.qs[L.i];return`<p class="note">${L.exam?'📝 מבחן גמר':'🧑‍🏫'} ${lifeLabel(a)} · שאלה ${L.i+1}/${L.n} ${L.fb}</p><div class="item" style="display:block"><b style="font-size:19px">${esc(q.t)}</b><div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">${q.opts.map(o=>`<button class="pcbtn" data-ans="${esc(o)}">${esc(o)}</button>`).join('')}</div></div>`;}
 function lifeBadge(){let el=$('lifeBadge');if(!el){el=document.createElement('div');el.id='lifeBadge';document.body.appendChild(el);}if(!lifeOn()){el.style.display='none';return;}const a=stats.life.age;el.style.display='';el.textContent=`${a<12?'👦':a<18?'🧑‍🎓':'🎓'} גיל ${a} · ${lifeLabel(a)}`;}
 function lifeStart(){if(mission)failMission(null,true);if(P.car)actionCar();stats.life={on:true,age:6};LS=null;save();closeMenu();big('👶 התחלת חיים מחדש!','אתה בן 6 ועולה לכיתה א׳. לך לבית הספר היסודי 🏫 (מסומן במפה)','#58c8ff',4200);sfx('win');const s=SCHOOLS.find(x=>x.k==='e');if(s)waypoint={x:s.x,z:s.z};lifeBadge();}
 function lifeEnd(grad){stats.life={on:false,age:30};LS=null;P.h.g.scale.setScalar(1);if(grad){P.money+=20000;stats.gems=(stats.gems||0)+2;big('🎓 סיימת את האוניברסיטה!','חזרת להיות מבוגר · +$20,000 · +💎2','#ffd84a',4500);sfx('win');}else{big('🧑 חזרת להיות מבוגר','אפשר להתחיל חיים מחדש מתי שתרצה בטלפון 📱','#58c8ff',3000);}waypoint=null;save();lifeBadge();}
-function lessonClick(d){if(d.ans!=null&&d.ans!==undefined&&LS&&LS.i<3){const q=LS.qs[LS.i];if(String(d.ans)===q.a){LS.ok++;LS.fb='✅ נכון!';sfx('pickup');}else{LS.fb=`❌ התשובה: ${q.a}`;sfx('fail');}LS.i++;renderMenu();return true;}
+function lessonClick(d){if(d.ans!=null&&d.ans!==undefined&&LS&&LS.i<LS.n){const q=LS.qs[LS.i];if(String(d.ans)===q.a){LS.ok++;LS.fb='✅ נכון!';sfx('pickup');}else{LS.fb=`❌ התשובה: ${q.a}`;sfx('fail');}LS.i++;renderMenu();return true;}
   if(d.lesson==='again'){LS=null;renderMenu();return true;}
-  if(d.lesson==='next'){const a=stats.life.age;LS=null;if(a>=21){closeMenu();lifeEnd(true);return true;}stats.life.age=a+1;save();const na=a+1,st=lifeStage(na);closeMenu();
+  if(d.lesson==='next'){const a=stats.life.age,okc=LS?LS.ok:2,nq=LS?LS.n:3;LS=null;if(a>=21){closeMenu();stats.degree=true;lifeEnd(true);setTimeout(()=>showCard('🎓 קיבלת תואר!','במה תרצה לעבוד?',['אפשר להחליף עבודה אחר כך במקום העבודה'],Object.keys(CAREERS).map(k=>`<button class="btn" data-career="${k}" style="width:100%;margin-top:6px">${CAREERS[k].i} ${CAREERS[k].n} · ${money(CAREERS[k].pay)} למשמרת</button>`).join('')),4800);return true;}stats.life.age=a+1;save();const sch=SCHOOLS.find(x=>x.k===lifeStage(a));setTimeout(()=>{startParty();reportCard(a,okc,nq);},700);if(sch&&a+1!==9&&a+1!==15)setTimeout(()=>startRecess(sch),25000);if(a+1===9||a+1===15)setTimeout(()=>startSchoolTrip(),26000);const na=a+1,st=lifeStage(na);closeMenu();
     big('🎂 יום הולדת '+na+'!',st!==lifeStage(a)?`עלית ל${SCHN[st]}! (מסומן במפה)`:`עלית ל${lifeLabel(na)}`,'#6dff9e',3200);sfx('win');addXP(30);if(st!==lifeStage(a)){const s=SCHOOLS.find(x=>x.k===st);if(s)waypoint={x:s.x,z:s.z};}if(na===16)setTimeout(()=>toast('🚗 בן 16! עכשיו מותר לך לנהוג'),3500);lifeBadge();return true;}
   return false;}
-function phoneApps(){return`<div class="item" style="display:block"><b>📲 אפליקציות</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="pcbtn" data-respawn="1">🔁 ריסטארט</button>${lifeOn()?`<button class="pcbtn" data-lifeend="1">🧑 חזור להיות מבוגר (גיל ${stats.life.age})</button>`:`<button class="pcbtn" data-lifego="1">👶 התחל חיים מחדש</button>`}</div><p class="note" style="font-size:12px;margin:6px 0 0">🔁 ריסטארט מחזיר אותך לבית החולים עם בריאות מלאה, בלי להפסיד כסף</p></div>`;}
+function phoneApps(){return`<div class="item" style="display:block"><b>📲 אפליקציות</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="pcbtn" data-respawn="1">🔁 ריסטארט</button>${lifeOn()?'<button class="pcbtn" data-bus="1">🚌 הסעה לבית הספר</button>':''}${stats.career?`<span class="pcbtn" style="opacity:.8">${CAREERS[stats.career].i} ${CAREERS[stats.career].n}</span>`:''}${lifeOn()?`<button class="pcbtn" data-lifeend="1">🧑 חזור להיות מבוגר (גיל ${stats.life.age})</button>`:`<button class="pcbtn" data-lifego="1">👶 התחל חיים מחדש</button>`}</div><p class="note" style="font-size:12px;margin:6px 0 0">🔁 ריסטארט מחזיר אותך לבית החולים עם בריאות מלאה, בלי להפסיד כסף</p></div>`+(lifeOn()&&stats.life.age<18?'':renderFamily());}
 function quickRestart(){closeMenu();if(mission)failMission(null,true);if(P.car){P.car.driver=null;P.car=null;}P.boat=null;P.plane=null;P.para=null;P.lift=null;if(P.jail){P.jail=null;$('jail').classList.remove('show');}
   bankFade('🔁 מתחילים מחדש…',()=>{P.dead=false;P.hp=100;P.y=0;P.vy=0;heat=0;P.x=HOSPITAL.x;P.z=HOSPITAL.z;P.a=Math.PI/2;cam.yaw=Math.PI/2;cam.x=P.x;cam.z=P.z-5;for(const p of peds)if(p.state==='hostile')p.state=p.kind==='gang'?'guard':'walk';for(const h of HUBS)h.cool=true;});}
-function phoneClick(d){if(d.respawn){quickRestart();return true;}if(d.lifego){if(confirm('להתחיל חיים מחדש כילד בן 6? (אפשר לחזור להיות מבוגר בכל רגע)'))lifeStart();return true;}if(d.lifeend){closeMenu();lifeEnd(false);return true;}return lessonClick(d);}
+function phoneClick(d){if(d.respawn){quickRestart();return true;}if(d.bus){schoolBus();return true;}if(famClick(d))return true;if(workClick(d))return true;if(shelterClick(d))return true;if(d.lifego){if(confirm('להתחיל חיים מחדש כילד בן 6? (אפשר לחזור להיות מבוגר בכל רגע)'))lifeStart();return true;}if(d.lifeend){closeMenu();lifeEnd(false);return true;}return lessonClick(d);}
 let kidT=0;
 function lifeTick(dt){if(lifeOn()){const s=lifeSc();P.h.g.scale.setScalar(s);if(P.car&&!isBike(P.car)&&stats.life.age<16&&!MODELS[CT[P.car.type].model].animal){actionCar();toast('👶 ילדים לא נוהגים! חכה עד גיל 16');}}
   kidT-=dt;if(kidT<=0){kidT=2;lifeBadge();const pp=me();for(const s of SCHOOLS)if(D2(pp.x,pp.z,s.x,s.z)<70*70){let n=0;for(const p of peds)if(p.schoolKid)n++;if(n<6){const q=randomWalk(s.x,s.z,3,14,30);if(q){const p=mkPed(q.x,q.z);p.schoolKid=true;p.kid=true;p.spd=rr(1.4,2);p.pitch=rr(1.6,1.9);p.h.g.scale.setScalar(s.k==='e'?rr(.58,.68):s.k==='h'?rr(.82,.92):1);peds.push(p);}}}}}
+/* ============ people together: families in cars, couples, kid life, careers, family, dog shelter ============ */
+// ---------- passengers in traffic ----------
+function addPassengers(c){const t=CT[c.type];if(!t||c.lux||!['civ','hatch','van','pickup','taxi'].includes(c.type)||R()>.6)return;const M=getModel(t.model),md=MODELS[t.model];if(!M.driver)return;const n=1+(Math.random()*3|0);c.pas=[];
+  for(let i=0;i<n;i++){const m=new THREE.Mesh(M.driver,vcMat);if(i===0)m.scale.z=-1;else{const k=i===1?.78:.72;m.scale.set(k,k,i===1?1:-1);m.position.set(-md.L*.26,(1-k)*.35,0);}c.g.add(m);c.pas.push(m);}}
+// ---------- couples on a date ----------
+const HEARTS=['❤️','😍','🥰','💕','אני כל כך שמחה איתך 🥰','בוא נלך לאכול גלידה 🍦','איזה יום יפה ❤️'];
+function makeCouple(p){const sd=p.a+Math.PI/2,q=mkPed(p.x+Math.cos(sd)*.8,p.z+Math.sin(sd)*.8);q.state='couple';q.lead=p;p.partner=q;p.spd=1.05;q.spd=1.1;peds.push(q);}
+function coupleAI(p,dt){const L=p.lead;if(!L||L.state==='dead'||!peds.includes(L)||D2(p.x,p.z,L.x,L.z)>400){p.state='walk';p.lead=null;return;}if(L.state!=='walk'&&L.state!=='chat'){p.state=L.state==='flee'?'flee':'walk';p.flee=L.flee;p.t=3;return;}
+  const sd=L.a+Math.PI/2,tx=L.x+Math.cos(sd)*.8,tz=L.z+Math.sin(sd)*.8;if(D2(p.x,p.z,tx,tz)>.04)walkTo(p,tx,tz,(L.spd||1.3)*1.2,dt);else p.a=lerpA(p.a,L.a,dt*4);if(R()<dt*.05)showBubble(R()<.5?p:L,pick(HEARTS),null,null,2.5);}
+// ---------- kid life extras ----------
+let backpack=null,party=null,recess=null,trip=null;
+function kidBag(){const want=lifeOn()&&stats.life.age<18;if(want&&!backpack){backpack=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(.18,.36,.3),mat(pick([0xd62828,0x1d4ed8,0x16a34a,0xf59e0b])));b.position.set(-.2,1.18,0);backpack.add(b);P.h.g.add(backpack);}else if(!want&&backpack){P.h.g.remove(backpack);backpack=null;}}
+function schoolBus(){const st=lifeStage(stats.life.age),s=SCHOOLS.find(x=>x.k===st);if(!s)return;closeMenu();if(P.car)actionCar();bankFade('🚌 ההסעה לבית הספר…',()=>{P.x=s.x+2;P.z=s.z+3;cam.x=P.x;cam.z=P.z-5;toast('🚌 הגעת ל'+SCHN[st]+'!');});}
+function startParty(){if(party)endParty();const g=new THREE.Group();scene.add(g);const ax=P.x+Math.cos(P.a)*2.2,az=P.z+Math.sin(P.a)*2.2,y=groundY(ax,az);
+  {const k1=new THREE.Mesh(new THREE.CylinderGeometry(.5,.55,.35,20),mat(0xffe4f0));k1.position.set(ax,y+.18,az);g.add(k1);const k2=new THREE.Mesh(new THREE.CylinderGeometry(.52,.52,.06,20),mat(0xff6fa8));k2.position.set(ax,y+.38,az);g.add(k2);}
+  for(let i=0;i<5;i++){const c=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.18,6),mat(0xffffff));c.position.set(ax+Math.cos(i*1.26)*.3,y+.5,az+Math.sin(i*1.26)*.3);g.add(c);const f=new THREE.Mesh(new THREE.SphereGeometry(.04,6,4),basic(0xffb000));f.position.set(c.position.x,y+.62,c.position.z);g.add(f);}
+  const bl=[];for(let i=0;i<8;i++){const b=new THREE.Mesh(new THREE.SphereGeometry(.28,10,8),mat(pick([0xff3d7f,0x58c8ff,0xffd23a,0x6dff9e,0xc77dff])));b.scale.y=1.2;b.position.set(P.x+rr(-3,3),y+rr(2.5,4),P.z+rr(-3,3));g.add(b);bl.push(b);}
+  const guests=[];for(let i=0;i<5;i++){const a=i/5*Math.PI*2,q=npc(ax+Math.cos(a)*2.2,az+Math.sin(a)*2.2,null);q.h.g.scale.setScalar(lifeSc()*rr(.95,1.05));q.a=Math.atan2(az-q.z,ax-q.x);guests.push(q);setTimeout(()=>{if(peds.includes(q))showBubble(q,pick(['🎉 מזל טוב!','🎂 יום הולדת שמח!','🎁 הבאתי לך מתנה!','🥳 עד 120!']),null,null,3);},400+i*500);}
+  const gift=Math.round(stats.life.age*25+rr(50,150));P.money+=gift;setTimeout(()=>toast(`🎁 קיבלת מתנות: ${money(gift)}`),3000);for(let i=0;i<20;i++)part(true,ax+rr(-1,1),y+2,az+rr(-1,1),rr(-3,3),rr(3,6),rr(-3,3),1.6,.12,pick([0xff3d7f,0x58c8ff,0xffd23a,0x6dff9e]),0,6);
+  party={g,bl,guests,t:22};}
+function endParty(){if(!party)return;scene.remove(party.g);for(const q of party.guests){peds=peds.filter(p=>p!==q);removePed(q);}party=null;}
+function startRecess(s){if(recess)endRecess();const kids=[];for(let i=0;i<6;i++){const q=npc(s.x+rr(-6,6),s.z+rr(2,8),null,'walk');q.h.g.scale.setScalar(s.k==='e'?rr(.58,.68):rr(.82,.92));q.spd=rr(1.6,2.2);q.kid=true;kids.push(q);}
+  const b=new THREE.Mesh(new THREE.IcosahedronGeometry(.22,1),mat(0xffffff));b.position.set(s.x,groundY(s.x,s.z)+.22,s.z+4);scene.add(b);recess={kids,b,x:s.x,z:s.z+4,vx:0,vz:0,t:45,tg:kids[0]};toast('🔔 הפסקה! בוא לשחק כדורגל עם הילדים ⚽');}
+function endRecess(){if(!recess)return;scene.remove(recess.b);for(const q of recess.kids){peds=peds.filter(p=>p!==q);removePed(q);}recess=null;}
+function recessTick(dt){const r=recess;if(!r)return;r.t-=dt;if(r.t<=0){endRecess();toast('🔔 ההפסקה נגמרה');return;}const tg=r.tg;if(tg&&peds.includes(tg)){walkTo(tg,r.x,r.z,2.2,dt);if(D2(tg.x,tg.z,r.x,r.z)<1){const o=pick(r.kids),a=Math.atan2(o.z-r.z,o.x-r.x);r.vx=Math.cos(a)*7;r.vz=Math.sin(a)*7;r.tg=o;sfx('pickup',.3);}}
+  if(onFoot()&&D2(P.x,P.z,r.x,r.z)<1.4){r.vx=Math.cos(P.a)*11;r.vz=Math.sin(P.a)*11;r.tg=pick(r.kids);sfx('pickup',.5);}r.x+=r.vx*dt;r.z+=r.vz*dt;const k=Math.max(0,1-1.8*dt);r.vx*=k;r.vz*=k;if(isSolid(r.x,r.z)){r.vx*=-1;r.vz*=-1;r.x+=r.vx*dt*2;r.z+=r.vz*dt*2;}r.b.position.set(r.x,groundY(r.x,r.z)+.22,r.z);r.b.rotation.x+=r.vx*dt;}
+function startSchoolTrip(){const s=SCHOOLS.find(x=>x.k===lifeStage(stats.life.age));bankFade('🚌 טיול שנתי לתצפית הגבעות!',()=>{const tx=HILLTOP.x+6,tz=HILLTOP.z+6;P.x=tx;P.z=tz;cam.x=P.x;cam.z=P.z-5;const cls=[];for(let i=0;i<7;i++){const q=npc(tx+rr(-5,5),tz+rr(-5,5),null,'walk');q.h.g.scale.setScalar(lifeSc()*rr(.95,1.05));q.kid=true;cls.push(q);}
+  const tch=npc(tx+2,tz,{shirt:0x7a1f3a,pants:0x2a2a2a,hairStyle:'pony',fem:true});tch.a=Math.PI;cls.push(tch);setTimeout(()=>{if(peds.includes(tch))showBubble(tch,'ילדים, תסתכלו על הנוף! 🏞️',null,null,4);},1500);trip={cls,t:35,back:s};toast('🏞️ טיול שנתי! תסתובב עם הכיתה בגבעות');});}
+function tripTick(dt){if(!trip)return;trip.t-=dt;if(trip.t<=0){const T0=trip;trip=null;bankFade('🚌 חוזרים מהטיול…',()=>{for(const q of T0.cls){peds=peds.filter(p=>p!==q);removePed(q);}if(T0.back){P.x=T0.back.x+2;P.z=T0.back.z+3;}addXP(40);toast('🏞️ איזה טיול! +40 XP');});}}
+const SUBJ=['📐 חשבון','🔤 אנגלית','🌍 ידע כללי','⚽ ספורט','😊 התנהגות'];
+function reportCard(age,ok,n){const L=SUBJ.map(s=>[s,Math.round(clamp(60+ok/n*35+rr(-6,8),55,100))]);const avg=Math.round(L.reduce((a,b)=>a+b[1],0)/L.length);
+  showCard(`📜 תעודה · ${lifeLabel(age)}`,`ממוצע: ${avg} ${avg>=90?'🌟 מצטיין!':avg>=75?'👍 כל הכבוד':'🙂 עברת'}`,L.map(([s,g])=>`${s}: <b>${g}</b>`));if(avg>=90){P.money+=300;setTimeout(()=>toast('🌟 פרס הצטיינות: $300'),1500);}}
+function showCard(title,sub,lines,buttons){const old=$('paper');if(old)old.remove();const el=document.createElement('div');el.id='paper';el.className='show';document.body.appendChild(el);
+  el.innerHTML=`<div class="pp"><div class="pphead">${title}</div><p class="ppsub" style="margin-top:8px">${sub}</p>${lines&&lines.length?`<div class="ppbox" style="font-size:16px;line-height:1.8">${lines.map(l=>`<div>${l}</div>`).join('')}</div>`:''}${buttons||'<button class="btn" data-pclose="1" style="width:100%">סגור</button>'}</div>`;
+  el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;e.stopPropagation();if(b.dataset.pclose)el.remove();else if(b.dataset.career){el.remove();chooseCareer(b.dataset.career);}});}
+// ---------- careers ----------
+const CAREERS={doc:{n:'רופא',i:'👨‍⚕️',pay:1500,place:'בית החולים'},pilot:{n:'טייס',i:'✈️',pay:2200,place:'שדה התעופה'},dev:{n:'מתכנת',i:'💻',pay:1200,place:'משרד ההייטק'}};
+const CQ={doc:[['למטופל יש חום וכאב גרון','אנטיביוטיקה',['גבס','משקפיים']],['ילד נפל ושבר את היד','גבס',['תרופה לשיעול','תפרים']],['חתך עמוק ברגל','תפרים',['משקפיים','מנוחה']],['מישהו לא רואה טוב מרחוק','משקפיים',['גבס','אנטיביוטיקה']],['כאב ראש אחרי יום בשמש','לשתות מים ולנוח',['ניתוח','גבס']],['עקיצה של דבורה ונפיחות','משחה וקרח',['תפרים','משקפיים']]],
+  pilot:[['מה עושים לפני המראה?','מבקשים אישור מהמגדל',['מכבים את המנוע','פותחים חלון']],['רוח צד חזקה בנחיתה','מתקנים עם ההגה',['מאיצים חזק','עוצמים עיניים']],['נורת דלק מהבהבת','נוחתים בשדה הקרוב',['ממשיכים כרגיל','עולים גבוה יותר']],['סערה בדרך','עוקפים אותה',['טסים דרכה','חוזרים ברוורס']],['נוסע מרגיש לא טוב','קוראים לדיילת ולרופא',['מתעלמים','קופצים במצנח']]],
+  dev:[['מה מדפיס console.log(2+2)?','4',['22','2+2']],['איזו לולאה רצה 10 פעמים?','for(i=0;i<10;i++)',['for(i=0;i<1;i++)','while(false)']],['התוכנית קורסת כי משתנה ריק','בודקים אם הוא null',['מוחקים את המחשב','מוסיפים עוד באגים']],['מה זה HTML?','שפה לבניית דפי אינטרנט',['סוג של גבינה','מערכת הפעלה']],['איך שומרים קוד בגיבוי?','git commit',['מדפיסים על נייר','שולחים בפקס']]]};
+const WORKS=[];
+function buildWork(){for(const [k,x,z] of [['doc',HOSPITAL.x+6,HOSPITAL.z],['pilot',300,-12],['dev',(()=>{const b=blocks[13*BL+11];return b.ix+3;})(),(()=>{const b=blocks[13*BL+11];return b.iz+22.5;})()]]){let xx=x;for(let i=0;i<6&&HUBS.some(h=>D2(h.x,h.z,xx,z)<49);i++)xx+=7;WORKS.push({k,x:xx,z});HUBS.push({k:'work_'+k,type:'work',work:k,x:xx,z,icon:CAREERS[k].i,title:`${CAREERS[k].i} עבודה: ${CAREERS[k].n}`});}}
+function chooseCareer(k){stats.career=k;save();const C=CAREERS[k],w=WORKS.find(x=>x.k===k);big(`${C.i} אתה ${C.n}!`,`משמרת אחת ביום ב${C.place} = ${money(C.pay)} (מסומן במפה)`,'#6dff9e',3800);if(w)waypoint={x:w.x,z:w.z};}
+let SH=null;
+function renderWork(H){const k=H.work,C=CAREERS[k],esc=x=>String(x).replace(/[<>&"]/g,'');if(!stats.degree)return`<p class="note">${C.i} כדי לעבוד כ${C.n} צריך תואר 🎓. התחל חיים מחדש בטלפון 📱 וסיים אוניברסיטה!</p>`;
+  if(stats.career!==k)return`<p class="note">${C.i} עבודה כ${C.n} · ${money(C.pay)} למשמרת</p><button class="btn" data-career2="${k}" style="width:100%">💼 לעבוד כאן</button>`;
+  const day=Math.floor(dayT/420);if(stats.shiftDay===day&&!(SH&&SH.k===k))return`<p class="note">✅ כבר עשית משמרת היום. חזור מחר (יום חדש במשחק)!</p>`;
+  if(!SH||SH.k!==k){const qs=CQ[k].slice().sort(()=>R()-.5).slice(0,3).map(([t,a,w])=>({t,a,opts:[a,...w].sort(()=>R()-.5)}));SH={k,qs,i:0,ok:0,fb:''};}
+  if(SH.i>=3){const pass=SH.ok>=2;return`<p class="note" style="font-size:19px">${pass?`🎉 משמרת מצוינת! (${SH.ok}/3)`:`😕 משמרת קשה (${SH.ok}/3)`}</p><button class="btn" data-shiftend="${pass?1:0}" style="width:100%">${pass?`💰 קבל ${money(C.pay)}`:'🔁 נסה שוב'}</button>`;}
+  const q=SH.qs[SH.i];return`<p class="note">${C.i} משמרת · משימה ${SH.i+1}/3 ${SH.fb}</p><div class="item" style="display:block"><b style="font-size:18px">${esc(q.t)}</b><div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">${q.opts.map(o=>`<button class="pcbtn" data-wans="${esc(o)}">${esc(o)}</button>`).join('')}</div></div>`;}
+function workClick(d){if(d.career2){chooseCareer(d.career2);renderMenu();return true;}if(d.wans!=null&&SH&&SH.i<3){const q=SH.qs[SH.i];if(d.wans===q.a){SH.ok++;SH.fb='✅';sfx('pickup');}else{SH.fb=`❌ (${q.a})`;sfx('fail');}SH.i++;renderMenu();return true;}
+  if(d.shiftend!=null){if(d.shiftend==='1'){const C=CAREERS[SH.k];P.money+=C.pay;stats.shiftDay=Math.floor(dayT/420);addXP(40);sfx('cash');toast(`💰 קיבלת משכורת: ${money(C.pay)}`);save();}SH=null;renderMenu();return true;}return false;}
+// ---------- family: dating, wedding, kids ----------
+const NAMES_F=['נועה','מאיה','שירה','יעל','תמר','רוני','אלה','ליה'],NAMES_M=['איתי','יונתן','עומר','דניאל','אורי','נדב','אריאל','גיא'],KIDN=['ליאו','מיקה','עדי','ניצן','אגם','שקד','עידו','אלמה'];
+let date=null,famNpc=[];
+function fam(){return stats.fam||(stats.fam={partner:null,love:0,married:false,kids:[],kidDay:-1});}
+function dateMatches(){const s=(Math.floor(dayT/420)*7)%8;return [0,1,2].map(i=>{const f=(s+i)%2===0;return{n:(f?NAMES_F:NAMES_M)[(s+i*3)%8],f,e:pick(f?['👩','👩‍🦰','👱‍♀️']:['👨','🧔','👱‍♂️']),hob:['אוהב/ת פיצה 🍕','מטייל/ת בגבעות ⛰️','רוקד/ת 💃','שחקן/ית כדורגל ⚽','צלם/ת 📸','גיימר/ית 🎮'][(s+i*2)%6]};});}
+function startDate(m){closeMenu();const F=fam();if(!F.partner)F.partner={n:m.n,f:m.f};const s=spotNear(P.x,P.z,50,90),p=npc(s.x,s.z,{fem:F.partner.f,shirt:F.partner.f?0xff6fa8:0x1d4ed8,pants:0x2a3550,hairStyle:F.partner.f?'long':'quiff',skirt:F.partner.f?0x7a1f3a:null});date={p,stage:'meet',t:40};waypoint={x:s.x,z:s.z};toast(`❤️ דייט עם ${F.partner.n}! לך לפגוש אותו/ה (מסומן במפה)`);}
+function endDate(ok){if(!date)return;const p=date.p;peds=peds.filter(q=>q!==p);removePed(p);date=null;waypoint=null;if(ok){const F=fam();F.love++;save();big(`❤️ דייט מושלם עם ${F.partner.n}!`,F.love>=3&&!F.married?'אולי הגיע הזמן להציע נישואים? 💍 (בטלפון)':`אהבה: ${'❤️'.repeat(Math.min(5,F.love))}`,'#ff6fa8',3500);sfx('win');}}
+function dateTick(dt){if(!date)return;const p=date.p,F=fam();if(!peds.includes(p)||p.state==='dead'){endDate(false);return;}
+  if(date.stage==='meet'){if(D(me(),p)<3){date.stage='walk';p.state='follow';showBubble(p,`היי! 😊 בוא נטייל קצת`,null,null,3);line('❤️ '+F.partner.n,'שמחתי שבאת! בוא נטייל ונדבר 🥰');}}
+  else{const d=D(me(),p);if(d<6)date.t-=dt;if(R()<dt*.12)showBubble(p,pick(['חחח אתה מצחיק 😂','איזה נוף יפה ❤️','בוא נאכל גלידה 🍦','אני נהנית מאוד 🥰','ספר לי עוד!']),null,null,3);if(P.car&&d>30){toast('❤️ חכה! השארת את הדייט מאחור');}if(date.t<=0)endDate(true);}}
+function wedding(){const F=fam();if(P.money<5000){toast('💍 טבעת עולה $5,000');return;}P.money-=5000;closeMenu();bankFade('💍 החתונה מתחילה…',()=>{const b=blocks[12*BL+13],x=b.ix+10,z=b.iz+10;P.x=x;P.z=z+3;cam.x=x;cam.z=z+9;cam.yaw=-Math.PI/2;
+    const pa=npc(x+1.2,z+3,{fem:F.partner.f,shirt:F.partner.f?0xffffff:0x111111,pants:F.partner.f?0xffffff:0x111111,skirt:F.partner.f?0xffffff:null,hairStyle:F.partner.f?'long':'short'});const gs=[pa];for(let i=0;i<12;i++){const a=i/12*Math.PI*2,g=npc(x+Math.cos(a)*6,z+3+Math.sin(a)*6,null);g.a=Math.atan2(z+3-g.z,x-g.x);gs.push(g);setTimeout(()=>{if(peds.includes(g))showBubble(g,pick(['💐 מזל טוב!','🥂 לחיים!','😭 איזה מרגש','💃 יאללה לרקוד!']),null,null,3);},600+i*300);}
+    for(let i=0;i<40;i++)part(true,x+rr(-3,3),4,z+3+rr(-3,3),rr(-3,3),rr(2,6),rr(-3,3),2.5,.12,pick([0xffffff,0xff6fa8,0xffd23a]),0,4);sfx('win');
+    F.married=true;save();setTimeout(()=>big(`💍 התחתנת עם ${F.partner.n}!`,'עכשיו אפשר להביא ילדים 👶 (בטלפון)','#ffd84a',4500),800);setTimeout(()=>{for(const g of gs){peds=peds.filter(p=>p!==g);removePed(g);}},30000);});}
+function haveKid(){const F=fam(),day=Math.floor(dayT/420);if(F.kidDay===day){toast('👶 אפשר ילד אחד ביום משחק');return;}if(F.kids.length>=4){toast('👨‍👩‍👧‍👦 המשפחה מלאה!');return;}F.kidDay=day;const n=KIDN[(F.kids.length*3+day)%8];F.kids.push({n,age:0});save();closeMenu();big(`👶 נולד/ה לכם ${n}!`,'הילד גדל בשנה כל יום במשחק. בקרו אותו בבית 🏠','#9fe8ff',4000);sfx('win');}
+function famGrow(){const F=stats.fam;if(!F)return;for(const k of F.kids)if(k.age<18)k.age++;}
+function famHome(dt){const F=stats.fam,near=F&&(F.married||F.kids.length)&&D2(P.x,P.z,HX+8,HZ+18)<70*70;if(near&&!famNpc.length){if(F.married){const p=npc(HX+6,HZ+19,{fem:F.partner.f,shirt:F.partner.f?0xff6fa8:0x1d4ed8,pants:0x2a3550,hairStyle:F.partner.f?'long':'quiff'},'wait');p.fam=1;famNpc.push(p);}
+    F.kids.forEach((k,i)=>{const q=npc(HX+8+i*1.4,HZ+20,null,'wait');q.h.g.scale.setScalar(clamp(.35+k.age*.036,.35,1));q.kid=true;famNpc.push(q);});}
+  else if(!near&&famNpc.length){for(const q of famNpc){peds=peds.filter(p=>p!==q);removePed(q);}famNpc=[];}
+  if(near&&R()<dt*.08&&famNpc.length){const q=pick(famNpc);showBubble(q,q.fam?pick(['ברוך הבא הביתה! ❤️','הכנתי ארוחת ערב 🍝','התגעגעתי 🥰']):pick(['אבא! אבא! 🤗','בוא נשחק! ⚽','קיבלתי 100 במבחן! 💯','אפשר גלידה? 🍦']),null,null,3);}}
+function renderFamily(){const F=fam(),esc=x=>String(x).replace(/[<>&"]/g,'');let h=`<div class="item" style="display:block"><b>❤️ משפחה</b>`;
+  if(!F.partner||(!F.married&&!date)){if(!F.married)h+=(F.partner?`<p class="note" style="text-align:right">💕 ${esc(F.partner.n)} · אהבה ${'❤️'.repeat(Math.min(5,F.love))||'🤍'}</p>`:'')+(F.partner?`<button class="pcbtn" data-date="0" style="width:100%">❤️ דייט נוסף עם ${esc(F.partner.n)}</button>`:dateMatches().map((m,i)=>`<div class="item"><div class="ic">${m.e}</div><div class="tx"><b>${m.n}</b><p>${m.hob}</p></div><button class="pcbtn" data-date="${i}">❤️ דייט</button></div>`).join(''));}
+  if(date)h+=`<p class="note">💕 יש לך דייט עכשיו עם ${esc(F.partner.n)}</p>`;
+  if(F.partner&&!F.married&&F.love>=3)h+=`<button class="btn" data-wed="1" style="width:100%;margin-top:6px">💍 להציע נישואים ($5,000)</button>`;
+  if(F.married){h+=`<p class="note" style="text-align:right">💍 נשוי/אה ל${esc(F.partner.n)}${F.kids.length?' · ילדים: '+F.kids.map(k=>`${esc(k.n)} (${k.age})`).join(', '):''}</p><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pcbtn" data-baby="1">👶 להביא ילד</button>${F.kids.length?`<button class="pcbtn" data-kidgift="1" ${P.money<100?'disabled':''}>🎁 מתנה לילדים ($100)</button>`:''}<button class="pcbtn" data-fammeal="1" ${P.money<60?'disabled':''}>🍕 ארוחה משפחתית ($60)</button></div><p class="note" style="font-size:12px">המשפחה גרה בבית שלך 🏠</p>`;}
+  return h+`</div>`;}
+function famClick(d){if(d.date!=null){if(date)return true;const F=fam();startDate(F.partner?{n:F.partner.n,f:F.partner.f}:dateMatches()[+d.date]);return true;}if(d.wed){wedding();return true;}if(d.baby){haveKid();return true;}
+  if(d.kidgift){P.money-=100;toast('🎁 הילדים קפצו משמחה! 🤗');sfx('win');renderMenu();return true;}if(d.fammeal){P.money-=60;P.hp=100;P.food=100;toast('🍕 ארוחה משפחתית! כולם שבעים ומאושרים');sfx('cash');renderMenu();return true;}return false;}
+// ---------- dog shelter ----------
+const SHELTER={x:-40,z:228};const DOGS=[['רקס','🐕',0xc9a26b,'נמצא ליד הים, אוהב לשחק בכדור'],['לוסי','🐩',0xf4f4f0,'שקטה ומתוקה, אוהבת ליטופים'],['שוקו','🐕‍🦺',0x222222,'שומר נאמן, רץ מהר מאוד'],['בונבון','🐶',0xa0522d,'גור שובב שמכרסם נעליים']];
+function buildShelter(){const x=SHELTER.x,z=SHELTER.z,y=hillH(x,z);const b=new THREE.Mesh(new THREE.BoxGeometry(9,3.4,6),mat(0xe8d6b8));b.position.set(x,y+1.7,z-6);scene.add(b);const rf=new THREE.Mesh(new THREE.ConeGeometry(6.8,2.4,4).rotateY(Math.PI/4),mat(0x8a3a2a));rf.scale.set(1,1,.7);rf.position.set(x,y+4.6,z-6);scene.add(rf);Z_HILL.solids.push({x0:x-4.5,x1:x+4.5,z0:z-9,z1:z-3,h:y+6});
+  const st=ctex(512,128,g=>{g.fillStyle='#a0522d';g.fillRect(0,0,512,128);g.fillStyle='#fff';g.font='bold 58px "Secular One", Assistant, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('🐾 מקלט לכלבים',256,68);});const s=new THREE.Mesh(new THREE.PlaneGeometry(5,1.25),new THREE.MeshBasicMaterial({map:st,side:THREE.DoubleSide}));s.position.set(x,y+3.9,z-2.9);scene.add(s);
+  HUBS.push({k:'shelter',type:'shelter',x,z:z-1.5,icon:'🐾',title:'🐾 מקלט לכלבים'});}
+function renderShelter(){return`<p class="note">🐾 הכלבים האלה מחכים לבית חם. האימוץ בחינם!</p>`+DOGS.map((d,i)=>`<div class="item"><div class="ic">${d[1]}</div><div class="tx"><b>${d[0]}</b><p>${d[3]}</p></div><button class="pcbtn" data-adopt="${i}">❤️ אמץ</button></div>`).join('')+(petData?`<p class="note">יש לך כבר חיית מחמד. אימוץ חדש יחליף אותה.</p>`:'');}
+let walkT=60;
+function dogWalk(dt){if(!pet||!petData||petData.kind!=='dog'||!onFoot())return;if(inHills(P.x,P.z)){walkT-=dt;if(walkT<=0){walkT=60;addXP(15);P.hp=Math.min(100,P.hp+10);toast('🐕 הכלב נהנה מהטיול בגבעות! +15 XP ❤️');}}}
+function shelterClick(d){if(d.adopt==null)return false;const g=DOGS[+d.adopt];petData={kind:'dog',col:g[2]};makePet();closeMenu();big(`${g[1]} אימצת את ${g[0]}!`,'הוא ילך אחריך לכל מקום. טיול בגבעות עושה לו טוב 🐾','#6dff9e',3500);sfx('win');unlock('pet');save();return true;}
+function famTick(dt){kidBag();recessTick(dt);tripTick(dt);dateTick(dt);famHome(dt);dogWalk(dt);if(party){party.t-=dt;for(const b of party.bl)b.position.y+=dt*.25;if(party.t<=0)endParty();}}
+function buildFam(){buildWork();buildShelter();}
 /* ============ accidents & arguments ============ */
 function crashFight(a,b,imp){const pl=a===P.car||b===P.car;
   if(pl){const o=a===P.car?b:a;if(o.driver==='ai'&&imp>10&&R()<.6){const q=ejectDriver(o,false,false);q.state='fight';q.fightT=15;say(q,'fight',true);}}
@@ -3926,7 +4018,7 @@ function spawner(dt){spawnT-=dt;if(spawnT>0)return;spawnT=.3;const pp=me();
   if(nc<(isTouch?14:20))spawnTraffic(70,130);
   let np=0;for(const p of peds)if(p.state!=='dead'&&D2(p.x,p.z,pp.x,pp.z)<100*100)np++;
   spawnPathTraffic();
-  if(np<(isTouch?24:34)){const q=randomWalk(pp.x,pp.z,40,85);if(q){const zq=zoneAt(q.x,q.z);if(!zq||!['air','air2','f1','hills','ring','plot','port','jewel','bankin'].includes(zq.id))peds.push(mkPed(q.x,q.z));}}
+  if(np<(isTouch?24:34)){const q=randomWalk(pp.x,pp.z,40,85);if(q){const zq=zoneAt(q.x,q.z);if(!zq||!['air','air2','f1','hills','ring','plot','port','jewel','bankin'].includes(zq.id)){const np=mkPed(q.x,q.z);peds.push(np);if(np.kind==='civ'&&!np.kid&&R()<.16)makeCouple(np);}}}
   const s=stars();
   if(s>0){polT-=.3;if(polT<=0){polT=Math.max(1.8,8-s*1.3);let pc=0,cp=0;for(const c of cars)if(c.type==='police'&&c.driver==='cop'&&!c.dead)pc++;for(const p of peds)if(p.kind==='cop'&&p.state==='hostile')cp++;
     if(pc<Math.min(5,s+(s>2?1:0))){const c=spawnTraffic(70,110,true);if(c){c.siren=true;c.v=18;}}
@@ -3935,8 +4027,8 @@ function spawner(dt){spawnT-=dt;if(spawnT>0)return;spawnT=.3;const pp=me();
   peds=peds.filter(p=>{const keep=(p.persist&&p.state!=='dead')||(p.state==='dead'?p.deadT>0:D2(p.x,p.z,pp.x,pp.z)<115*115);if(!keep)removePed(p);return keep;});
 }
 function spawnTraffic(minD,maxD,police){const pp=me(),lp=randomLane(pp.x,pp.z,minD,maxD);if(!lp)return null;for(const c of cars)if(D2(c.x,c.z,lp.x,lp.z)<100)return null;
-  const r0=R();const type0=police?null:r0<.12?'hatch':r0<.18?'pickup':r0<.22?'bus':r0<.24?'ambulance':r0<.28?'moto':null;if(type0){const c=mkCar(lp.x,lp.z,DIRA[lp.dir],type0);c.dir=lp.dir;c.lane=lp.lane;c.driver='ai';c.v=c.cruise;if(type0==='bus')c.cruise=7;cars.push(c);return c;}
-  const r=R(),type=police?'police':r<.03?pick(LUX):r<.08?'police':r<.19?'taxi':r<.27?'van':r<.32?'sports':'civ';const c=mkCar(lp.x,lp.z,DIRA[lp.dir],type);c.dir=lp.dir;c.lane=lp.lane;c.driver=type==='police'?'cop':'ai';c.v=c.cruise;cars.push(c);return c;}
+  const r0=R();const type0=police?null:r0<.12?'hatch':r0<.18?'pickup':r0<.22?'bus':r0<.24?'ambulance':r0<.28?'moto':null;if(type0){const c=mkCar(lp.x,lp.z,DIRA[lp.dir],type0);addPassengers(c);c.dir=lp.dir;c.lane=lp.lane;c.driver='ai';c.v=c.cruise;if(type0==='bus')c.cruise=7;cars.push(c);return c;}
+  const r=R(),type=police?'police':r<.03?pick(LUX):r<.08?'police':r<.19?'taxi':r<.27?'van':r<.32?'sports':'civ';const c=mkCar(lp.x,lp.z,DIRA[lp.dir],type);c.dir=lp.dir;c.lane=lp.lane;c.driver=type==='police'?'cop':'ai';c.v=c.cruise;cars.push(c);addPassengers(c);return c;}
 
 /* ============ visuals sync ============ */
 let nightK=0,dayK=1,raining=false,rainK=0,weatherT=90,curDist=-1,zoneT=null;
@@ -3985,7 +4077,7 @@ function setGfx(hi,quiet){GFX_HI=hi;try{localStorage.setItem('ir-gfx',hi?'high':
 function syncModels(){
   const pp=me(),vis=isTouch?150:185;
   for(const c of cars){const far=D2(c.x,c.z,pp.x,pp.z)>vis*vis;c.g.visible=!far;if(far)continue;c.y+=(groundY(c.x,c.z)-c.y)*.3;c.g.position.set(c.x,c.y+(c.alt||0),c.z);if(isBike(c)){c.lean=(c.lean||0)+(clamp(angDiff(c.a,c.pa==null?c.a:c.pa)*60*.12,-.55,.55)-(c.lean||0))*.2;c.pa=c.a;const wh=c===P.car&&(jumpHeld||keys.Space)&&c.v>3?.32:0;c.whl=(c.whl||0)+(wh-(c.whl||0))*.15;c.g.rotation.set(c.lean,-c.a,c.whl,'YXZ');c.g.position.y+=c.whl*.7;if(MODELS[CT[c.type].model].animal)c.g.position.y+=Math.abs(Math.sin(time*9+c.id))*Math.min(.22,Math.abs(c.v)*.03);if(c.type==='robot')c.g.position.y+=Math.abs(Math.sin(time*4))*.35*Math.min(1,Math.abs(c.v)/4);if(c.ty){c.g.position.y+=c.ty;c.g.rotation.x=time*5;}}else c.g.rotation.set(c.air||c.ramp?0:c.rl||0,-c.a,c.air?clamp(c.vy*.035,-.4,.3):c.ramp?.21:(c.pt||0)+(c.slope||0),'YXZ');
-    c.mat.envMapIntensity=(c.lux?1.1:.8)*(.3+.7*dayK);if(c.drv)c.drv.visible=!!c.driver&&!c.dead&&!(c===P.car&&isBike(c));if(c.neonM)c.neonM.material.opacity=.3+.5*nightK;
+    c.mat.envMapIntensity=(c.lux?1.1:.8)*(.3+.7*dayK);if(c.drv)c.drv.visible=!!c.driver&&!c.dead&&!(c===P.car&&isBike(c));if(c.pas){const pv=!c.dead&&c!==P.car&&(c.driver==='ai'||c.driver==='hroad'||c.driver==='path');for(const m of c.pas)m.visible=pv;}if(c.neonM)c.neonM.material.opacity=.3+.5*nightK;
     if(c.lbW){const f=c.siren&&Math.floor(time*8)%2;c.lbR.color.setHex(c.siren?(f?0xff2a3a:0x551018):0x661020);c.lbB.color.setHex(c.siren?(f?0x444444:0xffffff):0x999999);}else if(c.lbR){const f=c.siren&&Math.floor(time*8)%2;c.lbR.color.setHex(c.siren?(f?0xff2a4a:0x551018):0x661020);c.lbB.color.setHex(c.siren?(f?0x102070:0x3a8cff):0x102060);}
     if(!c.dead){const k=clamp(c.hp/c.maxhp,0,1);c.mat.color.setHex(c.col).multiplyScalar(.45+.55*k);}}
   for(const p of peds){const far=D2(p.x,p.z,pp.x,pp.z)>vis*vis;p.h.g.visible=!far;if(far)continue;const gy=groundY(p.x,p.z);p.h.g.position.set(p.x,gy,p.z);
